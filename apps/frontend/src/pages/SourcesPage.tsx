@@ -3,10 +3,10 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Filter, Search, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { useFeedSourceStore } from '../stores/feedSourceStore';
+import { useFeedStore } from '../stores/feedStore';
 import { AddFeedModal } from '../components/FeedManagement/AddFeedModal';
 import { EditFeedModal } from '../components/FeedManagement/EditFeedModal';
 import type { FeedSource } from '@maifead/types';
-import { mockFeedItems } from '../data/mockFeed';
 
 const PageContainer = styled.div`
   background: ${props => props.theme.colors.background};
@@ -355,6 +355,7 @@ const EmptyState = styled.div`
 export const SourcesPage: React.FC = () => {
   const navigate = useNavigate();
   const { sources, deleteSource } = useFeedSourceStore();
+  const { items: feedItems } = useFeedStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -372,8 +373,8 @@ export const SourcesPage: React.FC = () => {
   }, [sources, searchQuery]);
 
   // Calculate item counts per source
-  const getItemCount = (sourceName: string) => {
-    return mockFeedItems.filter(item => item.source.name === sourceName).length;
+  const getItemCount = (sourceId: string) => {
+    return feedItems.filter(item => item.sourceId === sourceId).length;
   };
 
   const handleEdit = (source: FeedSource) => {
@@ -446,7 +447,7 @@ export const SourcesPage: React.FC = () => {
 
             {filteredSources.map(source => {
               const filterCount = getTotalFilterCount(source);
-              const itemCount = getItemCount(source.name);
+              const itemCount = getItemCount(source.id);
 
               return (
                 <TableRow key={source.id}>

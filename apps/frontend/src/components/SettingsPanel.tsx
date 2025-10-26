@@ -279,7 +279,7 @@ const ModeButton = styled.button<{ $active: boolean }>`
 `;
 
 export const SettingsPanel: React.FC = () => {
-  const { isSettingsPanelOpen, maxCardWidth, feedLayout, setMaxCardWidth, setFeedLayout, closeSettingsPanel } = useUIStore();
+  const { isSettingsPanelOpen, maxCardWidth, feedLayout, viewMode, setMaxCardWidth, setFeedLayout, setViewMode, closeSettingsPanel } = useUIStore();
   const { mode, themePreset, setTheme, setThemePreset } = useThemeStore();
 
   const handleOverlayClick = () => {
@@ -295,17 +295,93 @@ export const SettingsPanel: React.FC = () => {
       <Overlay $isOpen={isSettingsPanelOpen} onClick={handleOverlayClick} />
       <Panel $isOpen={isSettingsPanelOpen} onClick={handlePanelClick}>
         <PanelHeader>
-          <PanelTitle>Display Settings</PanelTitle>
+          <PanelTitle>Settings</PanelTitle>
           <CloseButton onClick={closeSettingsPanel} aria-label="Close settings">
             <X />
           </CloseButton>
         </PanelHeader>
 
         <PanelContent>
+          {/* Card Settings */}
           <Section>
-            <SectionTitle>Appearance</SectionTitle>
+            <SectionTitle>Card Settings</SectionTitle>
             <SectionDescription>
-              Customize the look and feel of Maifead to match your preferences.
+              Customize the appearance of individual feed cards.
+            </SectionDescription>
+            <Control>
+              <Label htmlFor="card-width">Card Width: {maxCardWidth}px</Label>
+              <Slider
+                id="card-width"
+                type="range"
+                min="500"
+                max="1200"
+                step="50"
+                value={maxCardWidth}
+                onChange={e => setMaxCardWidth(Number(e.target.value))}
+              />
+              <SliderValue>
+                {maxCardWidth === 500 && 'Narrow'}
+                {maxCardWidth > 500 && maxCardWidth < 900 && 'Medium'}
+                {maxCardWidth >= 900 && 'Wide'}
+              </SliderValue>
+            </Control>
+          </Section>
+
+          {/* Feed Settings */}
+          <Section>
+            <SectionTitle>Feed Settings</SectionTitle>
+            <SectionDescription>
+              Control how your feed is displayed and organized.
+            </SectionDescription>
+
+            <Control>
+              <Label>Layout Columns</Label>
+              <ButtonGroup>
+                <LayoutButton
+                  $active={feedLayout === 'single'}
+                  onClick={() => setFeedLayout('single')}
+                >
+                  Single
+                </LayoutButton>
+                <LayoutButton
+                  $active={feedLayout === 'double'}
+                  onClick={() => setFeedLayout('double')}
+                >
+                  Double
+                </LayoutButton>
+                <LayoutButton
+                  $active={feedLayout === 'triple'}
+                  onClick={() => setFeedLayout('triple')}
+                >
+                  Triple
+                </LayoutButton>
+              </ButtonGroup>
+            </Control>
+
+            <Control>
+              <Label>Card View</Label>
+              <ButtonGroup>
+                <LayoutButton
+                  $active={viewMode === 'detailed'}
+                  onClick={() => setViewMode('detailed')}
+                >
+                  Detailed
+                </LayoutButton>
+                <LayoutButton
+                  $active={viewMode === 'compact'}
+                  onClick={() => setViewMode('compact')}
+                >
+                  Compact
+                </LayoutButton>
+              </ButtonGroup>
+            </Control>
+          </Section>
+
+          {/* Site Settings */}
+          <Section>
+            <SectionTitle>Site Settings</SectionTitle>
+            <SectionDescription>
+              Customize the overall look and feel of Maifead.
             </SectionDescription>
 
             <Control>
@@ -353,60 +429,6 @@ export const SettingsPanel: React.FC = () => {
                   );
                 })}
               </ColorGrid>
-            </Control>
-          </Section>
-
-          <Section>
-            <SectionTitle>Card Width</SectionTitle>
-            <SectionDescription>
-              Adjust the maximum width of feed cards. Useful for larger screens.
-            </SectionDescription>
-            <Control>
-              <Label htmlFor="card-width">Max Width: {maxCardWidth}px</Label>
-              <Slider
-                id="card-width"
-                type="range"
-                min="500"
-                max="1200"
-                step="50"
-                value={maxCardWidth}
-                onChange={e => setMaxCardWidth(Number(e.target.value))}
-              />
-              <SliderValue>
-                {maxCardWidth === 500 && 'Narrow'}
-                {maxCardWidth > 500 && maxCardWidth < 900 && 'Medium'}
-                {maxCardWidth >= 900 && 'Wide'}
-              </SliderValue>
-            </Control>
-          </Section>
-
-          <Section>
-            <SectionTitle>Layout</SectionTitle>
-            <SectionDescription>
-              Choose how many columns to display. Multiple columns work best on wider screens.
-            </SectionDescription>
-            <Control>
-              <Label>Columns</Label>
-              <ButtonGroup>
-                <LayoutButton
-                  $active={feedLayout === 'single'}
-                  onClick={() => setFeedLayout('single')}
-                >
-                  Single
-                </LayoutButton>
-                <LayoutButton
-                  $active={feedLayout === 'double'}
-                  onClick={() => setFeedLayout('double')}
-                >
-                  Double
-                </LayoutButton>
-                <LayoutButton
-                  $active={feedLayout === 'triple'}
-                  onClick={() => setFeedLayout('triple')}
-                >
-                  Triple
-                </LayoutButton>
-              </ButtonGroup>
             </Control>
           </Section>
         </PanelContent>

@@ -157,6 +157,13 @@ const MediaImage = styled.img`
   width: 100%;
   height: auto;
   display: block;
+  cursor: zoom-in;
+  transition: all ${props => props.theme.transitions.fast};
+
+  &:hover {
+    opacity: 0.9;
+    transform: scale(1.01);
+  }
 `;
 
 const VideoEmbed = styled.div`
@@ -180,6 +187,12 @@ const Content = styled.div`
   font-size: ${props => props.theme.fontSizes.base};
   line-height: ${props => props.theme.lineHeights.relaxed};
   color: ${props => props.theme.colors.text};
+  overflow-x: hidden;
+  word-wrap: break-word;
+
+  /* Force single column layout - prevent any multi-column layouts */
+  column-count: 1 !important;
+  columns: auto !important;
 
   h1,
   h2,
@@ -209,6 +222,32 @@ const Content = styled.div`
 
   p {
     margin: 0 0 ${props => props.theme.spacing[4]} 0;
+    float: none !important;
+    clear: both !important;
+    width: auto !important;
+
+    /* Reduce margin for paragraphs containing only images */
+    &:has(> img:only-child),
+    &:has(> img:first-child:last-child) {
+      margin: ${props => props.theme.spacing[2]} 0;
+    }
+
+    /* Hide empty paragraphs */
+    &:empty {
+      display: none;
+      margin: 0;
+    }
+  }
+
+  /* Remove excessive spacing from br tags near images */
+  br + img,
+  img + br {
+    margin-top: ${props => props.theme.spacing[1]};
+  }
+
+  /* Collapse multiple br tags */
+  br + br {
+    display: none;
   }
 
   a {
@@ -261,10 +300,91 @@ const Content = styled.div`
   }
 
   img {
-    max-width: 100%;
-    height: auto;
+    max-width: 100% !important;
+    width: auto !important;
+    height: auto !important;
     border-radius: ${props => props.theme.borderRadius.md};
-    margin: ${props => props.theme.spacing[4]} 0;
+    margin: ${props => props.theme.spacing[2]} 0 !important;
+    display: block !important;
+    vertical-align: top !important;
+    align-self: flex-start !important;
+    cursor: zoom-in;
+    transition: all ${props => props.theme.transitions.fast};
+
+    &:hover {
+      opacity: 0.9;
+      transform: scale(1.01);
+    }
+  }
+
+  /* Handle figure elements and image containers */
+  figure {
+    max-width: 100% !important;
+    width: auto !important;
+    margin: ${props => props.theme.spacing[2]} 0 !important;
+    overflow: hidden;
+
+    img {
+      margin: 0;
+    }
+  }
+
+  figcaption {
+    font-size: ${props => props.theme.fontSizes.sm};
+    color: ${props => props.theme.colors.textSecondary};
+    margin-top: ${props => props.theme.spacing[2]};
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* Handle div containers around images */
+  div {
+    max-width: 100% !important;
+    float: none !important;
+    clear: both !important;
+
+    /* Fix alignment for divs containing images */
+    &:has(> img) {
+      display: block !important;
+      line-height: 0;
+      width: 100% !important;
+    }
+  }
+
+  /* Handle picture elements */
+  picture {
+    max-width: 100% !important;
+    display: block;
+  }
+
+  /* Fix aspect ratio padding tricks that create blank space */
+  .fancy-box,
+  .van-image-figure,
+  .image-full-width-wrapper,
+  .image-widthsetting,
+  .vanilla-image-block,
+  [class*="image-"],
+  [class*="-image"],
+  [class*="figure"] {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    height: auto !important;
+    position: static !important;
+    max-width: 100% !important;
+  }
+
+  /* Ensure images inside these containers are visible and not positioned absolutely */
+  .fancy-box img,
+  .van-image-figure img,
+  .image-full-width-wrapper img,
+  .image-widthsetting img,
+  .vanilla-image-block img,
+  [class*="image-"] img,
+  [class*="-image"] img {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
   }
 
   code {
@@ -349,9 +469,76 @@ const ActionButton = styled.button<{ $primary?: boolean }>`
   }
 `;
 
+const LightboxBackdrop = styled(motion.div)`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: ${props => props.theme.zIndex.modal + 1};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: ${props => props.theme.spacing[8]};
+  cursor: zoom-out;
+`;
+
+const LightboxImage = styled(motion.img)`
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: ${props => props.theme.borderRadius.md};
+  box-shadow: ${props => props.theme.shadows['2xl']};
+`;
+
+const LightboxCloseButton = styled.button`
+  position: fixed;
+  top: ${props => props.theme.spacing[6]};
+  right: ${props => props.theme.spacing[6]};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: ${props => props.theme.borderRadius.full};
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all ${props => props.theme.transitions.fast};
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+`;
+
 export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClose, onToggleRead }) => {
   const { readItemIds } = useUIStore();
   const contentRef = useRef<HTMLDivElement>(null);
+  const [lightboxImage, setLightboxImage] = React.useState<string | null>(null);
+
+  // Add click handler to images for lightbox
+  useEffect(() => {
+    if (!isOpen || !item || !contentRef.current) return;
+
+    const handleImageClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'IMG') {
+        const img = target as HTMLImageElement;
+        setLightboxImage(img.src);
+      }
+    };
+
+    contentRef.current.addEventListener('click', handleImageClick);
+
+    return () => {
+      contentRef.current?.removeEventListener('click', handleImageClick);
+    };
+  }, [isOpen, item]);
 
   // Load and process embedded content
   useEffect(() => {
@@ -407,7 +594,13 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (lightboxImage) {
+          setLightboxImage(null);
+        } else {
+          onClose();
+        }
+      }
     };
 
     if (isOpen) {
@@ -419,7 +612,7 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, lightboxImage]);
 
   if (!item) return null;
 
@@ -476,7 +669,11 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
 
               {primaryMedia && primaryMedia.type === 'image' && (
                 <MediaContainer>
-                  <MediaImage src={primaryMedia.url} alt={primaryMedia.alt || item.title} />
+                  <MediaImage
+                    src={primaryMedia.url}
+                    alt={primaryMedia.alt || item.title}
+                    onClick={() => setLightboxImage(primaryMedia.url)}
+                  />
                 </MediaContainer>
               )}
 
@@ -512,6 +709,29 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
             </ModalFooter>
           </ModalContainer>
         </Backdrop>
+      )}
+
+      {/* Image Lightbox */}
+      {lightboxImage && (
+        <LightboxBackdrop
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setLightboxImage(null)}
+        >
+          <LightboxCloseButton onClick={() => setLightboxImage(null)} aria-label="Close lightbox">
+            <X />
+          </LightboxCloseButton>
+          <LightboxImage
+            src={lightboxImage}
+            alt="Full size"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </LightboxBackdrop>
       )}
     </AnimatePresence>
   );

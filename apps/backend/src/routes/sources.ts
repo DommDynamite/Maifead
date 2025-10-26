@@ -11,5 +11,6 @@ router.post('/', SourcesController.create);
 router.patch('/:id', SourcesController.update);
 router.delete('/:id', SourcesController.delete);
 router.post('/:id/refresh', SourcesController.refresh);
+router.post('/update-icons', SourcesController.updateIcons);
 
 export default router;

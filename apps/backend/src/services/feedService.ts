@@ -42,6 +42,29 @@ export class FeedService {
   }
 
   /**
+   * Extract favicon/icon URL from feed URL or feed metadata
+   */
+  static async getFaviconUrl(feedUrl: string, feed?: any): Promise<string | undefined> {
+    try {
+      // Try to get from feed metadata first
+      if (feed?.image?.url) {
+        return feed.image.url;
+      }
+
+      // Extract base URL from feed URL
+      const urlObj = new URL(feedUrl);
+      const baseUrl = `${urlObj.protocol}//${urlObj.hostname}`;
+
+      // Use Google's favicon service as a reliable fallback
+      // This service fetches favicons from multiple sources and caches them
+      return `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=128`;
+    } catch (error) {
+      console.error(`Error getting favicon for ${feedUrl}:`, error);
+      return undefined;
+    }
+  }
+
+  /**
    * Fetch and store feed items for a specific source
    */
   static async fetchAndStoreItems(source: Source): Promise<number> {
@@ -182,6 +205,40 @@ export class FeedService {
     // Truncate
     if (stripped.length <= maxLength) return stripped;
     return stripped.substring(0, maxLength).trim() + '...';
+  }
+
+  /**
+   * Update source icon URL by fetching it from the feed
+   */
+  static async updateSourceIcon(sourceId: string, url: string): Promise<void> {
+    try {
+      const feed = await this.fetchFeed(url);
+      const iconUrl = await this.getFaviconUrl(url, feed);
+
+      if (iconUrl) {
+        db.prepare('UPDATE sources SET icon_url = ?, updated_at = ? WHERE id = ?')
+          .run(iconUrl, Date.now(), sourceId);
+        console.log(`Updated icon for source ${sourceId}: ${iconUrl}`);
+      }
+    } catch (error) {
+      console.error(`Failed to update icon for source ${sourceId}:`, error);
+    }
+  }
+
+  /**
+   * Update icons for all sources that don't have one
+   */
+  static async updateMissingIcons(): Promise<void> {
+    const sources = db.prepare('SELECT * FROM sources WHERE icon_url IS NULL').all() as any[];
+
+    console.log(`Updating icons for ${sources.length} sources...`);
+
+    for (const sourceRow of sources) {
+      const source = this.rowToSource(sourceRow);
+      await this.updateSourceIcon(source.id, source.url);
+    }
+
+    console.log('Finished updating source icons');
   }
 
   /**

@@ -49,12 +49,16 @@ export class SourcesController {
         return res.status(400).json({ error: 'Name and URL are required' });
       }
 
-      // Validate the RSS feed URL
+      // Validate the RSS feed URL and fetch metadata
+      let feed;
       try {
-        await FeedService.fetchFeed(url);
+        feed = await FeedService.fetchFeed(url);
       } catch (error) {
         return res.status(400).json({ error: 'Invalid RSS feed URL' });
       }
+
+      // Get favicon URL
+      const iconUrl = await FeedService.getFaviconUrl(url, feed);
 
       const sourceId = randomUUID();
       const now = Date.now();
@@ -68,9 +72,9 @@ export class SourcesController {
         : null;
 
       db.prepare(`
-        INSERT INTO sources (id, user_id, name, url, category, whitelist_keywords, blacklist_keywords, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(sourceId, userId, name, url, category || null, whitelistJson, blacklistJson, now, now);
+        INSERT INTO sources (id, user_id, name, url, category, icon_url, whitelist_keywords, blacklist_keywords, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(sourceId, userId, name, url, category || null, iconUrl || null, whitelistJson, blacklistJson, now, now);
 
       const source = db.prepare('SELECT * FROM sources WHERE id = ?').get(sourceId) as any;
 
@@ -250,6 +254,33 @@ export class SourcesController {
     } catch (error) {
       console.error('Refresh source error:', error);
       res.status(500).json({ error: 'Failed to refresh source' });
+    }
+  }
+
+  /**
+   * Update icons for all sources (admin/utility endpoint)
+   */
+  static async updateIcons(req: Request, res: Response) {
+    try {
+      const userId = (req as any).userId;
+
+      // Update icons for user's sources that don't have one
+      const sources = db.prepare('SELECT * FROM sources WHERE user_id = ? AND icon_url IS NULL')
+        .all(userId) as any[];
+
+      const updatePromises = sources.map(async (sourceRow: any) => {
+        await FeedService.updateSourceIcon(sourceRow.id, sourceRow.url);
+      });
+
+      await Promise.all(updatePromises);
+
+      res.json({
+        message: 'Source icons updated successfully',
+        updatedCount: sources.length,
+      });
+    } catch (error) {
+      console.error('Update icons error:', error);
+      res.status(500).json({ error: 'Failed to update icons' });
     }
   }
 }

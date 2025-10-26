@@ -1,9 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, BarChart3 } from 'lucide-react';
+import { X, TrendingUp } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
-import { ViewModeToggle } from './ViewModeToggle';
 import { SortOptions } from './SortOptions';
 import { FeedStatistics } from './FeedStatistics';
 import { SourceBreakdown } from './SourceBreakdown';
@@ -111,7 +110,7 @@ const overlayVariants = {
 };
 
 export const FeedControlsPanel: React.FC<FeedControlsPanelProps> = ({ items }) => {
-  const { isFeedControlsPanelOpen, toggleFeedControlsPanel, viewMode, setViewMode, sortBy, setSortBy, readItemIds } =
+  const { isFeedControlsPanelOpen, toggleFeedControlsPanel, sortBy, setSortBy, readItemIds } =
     useUIStore();
 
   return (
@@ -135,8 +134,8 @@ export const FeedControlsPanel: React.FC<FeedControlsPanelProps> = ({ items }) =
           >
             <Header>
               <Title>
-                <BarChart3 />
-                Feed Controls
+                <TrendingUp />
+                Sort & Statistics
               </Title>
               <CloseButton onClick={toggleFeedControlsPanel}>
                 <X />
@@ -144,10 +143,6 @@ export const FeedControlsPanel: React.FC<FeedControlsPanelProps> = ({ items }) =
             </Header>
 
             <Content>
-              <ViewModeToggle value={viewMode} onChange={setViewMode} />
-
-              <Divider />
-
               <SortOptions value={sortBy} onChange={setSortBy} />
 
               <Divider />
