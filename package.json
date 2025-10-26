@@ -1,0 +1,28 @@
+{
+  "name": "maifead",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Beautiful RSS feed aggregator without algorithmic distractions",
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/**\" dev",
+    "build": "pnpm --recursive --filter \"./apps/**\" build",
+    "lint": "pnpm --recursive lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+  },
+  "keywords": [
+    "rss",
+    "feed-reader",
+    "aggregator",
+    "react",
+    "nestjs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "^3.2.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
