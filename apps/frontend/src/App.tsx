@@ -4,6 +4,8 @@ import { ThemeProvider } from './theme/ThemeProvider';
 import { Layout } from './components/Layout/Layout';
 import { FeedView } from './pages/FeedView';
 import { SourcesPage } from './pages/SourcesPage';
+import { AuthPage } from './pages/AuthPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { IconRail } from './components/Navigation/IconRail';
 import { SourcesPanel } from './components/Navigation/SourcesPanel';
 import { FeadsPanel } from './components/Navigation/FeadsPanel';
@@ -22,6 +24,9 @@ function AppContent() {
       <FeedControlsPanel items={mockFeedItems} />
       <ToastContainer />
       <Routes>
+        {/* Authentication page */}
+        <Route path="/auth" element={<AuthPage />} />
+
         {/* Main feed view */}
         <Route
           path="/"
@@ -38,6 +43,16 @@ function AppContent() {
           element={
             <Layout>
               <SourcesPage />
+            </Layout>
+          }
+        />
+
+        {/* Profile settings page */}
+        <Route
+          path="/profile"
+          element={
+            <Layout>
+              <ProfilePage />
             </Layout>
           }
         />

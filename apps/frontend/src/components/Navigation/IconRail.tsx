@@ -1,9 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Radio, Library, Star, Folder, Settings } from 'lucide-react';
+import { Home, Radio, Library, Star, Folder, Settings, User, LogOut } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useThemeStore } from '../../stores/themeStore';
+import { useAuthStore } from '../../stores/authStore';
 import { ThemeToggle } from '../ThemeToggle';
 
 const RailContainer = styled.aside`
@@ -109,6 +110,7 @@ export const IconRail: React.FC = () => {
     isFeadsPanelOpen,
     isCollectionsPanelOpen,
   } = useUIStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
 
   const isOnSourcesPage = location.pathname === '/sources';
 
@@ -140,6 +142,19 @@ export const IconRail: React.FC = () => {
 
   const handleSettingsClick = () => {
     navigate('/sources');
+  };
+
+  const handleUserClick = () => {
+    if (isAuthenticated) {
+      navigate('/profile');
+    } else {
+      navigate('/auth');
+    }
+  };
+
+  const handleLogoutClick = () => {
+    logout();
+    navigate('/auth');
   };
 
   return (
@@ -199,6 +214,37 @@ export const IconRail: React.FC = () => {
       <BottomSection>
         <Divider />
         <ThemeToggle />
+
+        {isAuthenticated ? (
+          <>
+            <IconButton
+              onClick={handleUserClick}
+              aria-label="Account"
+              title={user?.displayName || 'Account'}
+            >
+              <User />
+              <Tooltip>{user?.displayName || 'Account'}</Tooltip>
+            </IconButton>
+            <IconButton
+              onClick={handleLogoutClick}
+              aria-label="Logout"
+              title="Logout"
+            >
+              <LogOut />
+              <Tooltip>Logout</Tooltip>
+            </IconButton>
+          </>
+        ) : (
+          <IconButton
+            onClick={handleUserClick}
+            aria-label="Sign In"
+            title="Sign In"
+          >
+            <User />
+            <Tooltip>Sign In</Tooltip>
+          </IconButton>
+        )}
+
         <IconButton
           $active={isOnSourcesPage}
           onClick={handleSettingsClick}
