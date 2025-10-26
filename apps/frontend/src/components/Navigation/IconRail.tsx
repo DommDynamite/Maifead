@@ -118,7 +118,8 @@ export const IconRail: React.FC = () => {
     if (location.pathname !== '/') {
       navigate('/');
     }
-    setActiveView('all');
+    // Use the store's clearSourceSelection which sets activeView to 'all' and clears sources
+    useUIStore.getState().clearSourceSelection();
   };
 
   const handleSourcesClick = () => {
@@ -163,11 +164,11 @@ export const IconRail: React.FC = () => {
         <IconButton
           $active={activeView === 'all'}
           onClick={handleAllFeedsClick}
-          aria-label="All Feeds"
-          title="All Feeds"
+          aria-label="The Fead"
+          title="The Fead"
         >
           <Home />
-          <Tooltip>All Feeds</Tooltip>
+          <Tooltip>The Fead</Tooltip>
         </IconButton>
 
         <IconButton

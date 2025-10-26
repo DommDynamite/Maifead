@@ -21,6 +21,8 @@ export class SourcesController {
         userId: s.user_id,
         name: s.name,
         url: s.url,
+        type: s.type || 'rss',
+        channelId: s.channel_id,
         iconUrl: s.icon_url,
         description: s.description,
         category: s.category,
@@ -43,22 +45,61 @@ export class SourcesController {
   static async create(req: Request<{}, {}, CreateSourceRequest>, res: Response) {
     try {
       const userId = (req as any).userId;
-      const { name, url, category, whitelistKeywords, blacklistKeywords } = req.body;
+      const { name, url, type, channelId, category, whitelistKeywords, blacklistKeywords } = req.body;
 
       if (!name || !url) {
         return res.status(400).json({ error: 'Name and URL are required' });
       }
 
-      // Validate the RSS feed URL and fetch metadata
-      let feed;
-      try {
-        feed = await FeedService.fetchFeed(url);
-      } catch (error) {
-        return res.status(400).json({ error: 'Invalid RSS feed URL' });
+      const sourceType = type || 'rss';
+      let feedUrl = url;
+      let extractedChannelId = channelId;
+      let iconUrl: string | undefined;
+
+      // Handle YouTube sources
+      if (sourceType === 'youtube') {
+        // If channel ID not provided or not a real UC ID, fetch it from the URL
+        if (!extractedChannelId || !extractedChannelId.startsWith('UC')) {
+          // First try to extract a basic identifier from URL
+          const identifier = FeedService.extractYouTubeChannelId(url);
+          if (!identifier) {
+            return res.status(400).json({ error: 'Invalid YouTube URL. Please paste a video URL, channel URL, or RSS feed URL.' });
+          }
+
+          // If it's not a UC channel ID, fetch the real one from the page
+          if (!identifier.startsWith('UC')) {
+            const realChannelId = await FeedService.getYouTubeChannelId(url);
+            if (!realChannelId) {
+              return res.status(400).json({ error: 'Could not find YouTube channel ID from this URL' });
+            }
+            extractedChannelId = realChannelId;
+          } else {
+            extractedChannelId = identifier;
+          }
+        }
+
+        // Convert YouTube URL to RSS feed URL
+        feedUrl = FeedService.convertYouTubeToRss(extractedChannelId);
+
+        // Fetch the channel icon from the page
+        iconUrl = await FeedService.getYouTubeChannelIcon(url) ||
+                  'https://www.youtube.com/s/desktop/8f4c562e/img/favicon_144x144.png';
       }
 
-      // Get favicon URL
-      const iconUrl = await FeedService.getFaviconUrl(url, feed);
+      // Validate the feed URL and fetch metadata
+      let feed;
+      try {
+        feed = await FeedService.fetchFeed(feedUrl);
+      } catch (error) {
+        return res.status(400).json({
+          error: sourceType === 'youtube' ? 'Invalid YouTube channel' : 'Invalid RSS feed URL'
+        });
+      }
+
+      // Get favicon URL for RSS feeds
+      if (sourceType === 'rss') {
+        iconUrl = await FeedService.getFaviconUrl(feedUrl, feed);
+      }
 
       const sourceId = randomUUID();
       const now = Date.now();
@@ -72,9 +113,22 @@ export class SourcesController {
         : null;
 
       db.prepare(`
-        INSERT INTO sources (id, user_id, name, url, category, icon_url, whitelist_keywords, blacklist_keywords, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(sourceId, userId, name, url, category || null, iconUrl || null, whitelistJson, blacklistJson, now, now);
+        INSERT INTO sources (id, user_id, name, url, type, channel_id, category, icon_url, whitelist_keywords, blacklist_keywords, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        sourceId,
+        userId,
+        name,
+        feedUrl, // Store the RSS feed URL, not the original YouTube URL
+        sourceType,
+        extractedChannelId || null,
+        category || null,
+        iconUrl || null,
+        whitelistJson,
+        blacklistJson,
+        now,
+        now
+      );
 
       const source = db.prepare('SELECT * FROM sources WHERE id = ?').get(sourceId) as any;
 
@@ -84,6 +138,8 @@ export class SourcesController {
         userId: source.user_id,
         name: source.name,
         url: source.url,
+        type: source.type || 'rss',
+        channelId: source.channel_id,
         iconUrl: source.icon_url,
         description: source.description,
         category: source.category,
@@ -98,6 +154,8 @@ export class SourcesController {
         userId: source.user_id,
         name: source.name,
         url: source.url,
+        type: source.type || 'rss',
+        channelId: source.channel_id,
         iconUrl: source.icon_url,
         description: source.description,
         category: source.category,
@@ -174,6 +232,8 @@ export class SourcesController {
         userId: updated.user_id,
         name: updated.name,
         url: updated.url,
+        type: updated.type || 'rss',
+        channelId: updated.channel_id,
         iconUrl: updated.icon_url,
         description: updated.description,
         category: updated.category,
@@ -236,6 +296,8 @@ export class SourcesController {
         userId: sourceRow.user_id,
         name: sourceRow.name,
         url: sourceRow.url,
+        type: sourceRow.type || 'rss',
+        channelId: sourceRow.channel_id,
         iconUrl: sourceRow.icon_url,
         description: sourceRow.description,
         category: sourceRow.category,

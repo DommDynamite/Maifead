@@ -40,7 +40,7 @@ function AppContent() {
     if (isAuthenticated) {
       fetchSources();
       fetchCollections();
-      fetchItems({ limit: 100 });
+      fetchItems({ limit: 500 }); // Increased to handle multiple sources
     }
   }, [isAuthenticated, fetchSources, fetchCollections, fetchItems]);
 

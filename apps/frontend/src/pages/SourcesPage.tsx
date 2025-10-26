@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Filter, Search, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Filter, Search, ArrowLeft, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { useFeedSourceStore } from '../stores/feedSourceStore';
 import { useFeedStore } from '../stores/feedStore';
 import { AddFeedModal } from '../components/FeedManagement/AddFeedModal';
@@ -141,7 +141,7 @@ const Table = styled.div`
 
 const TableHeader = styled.div`
   display: grid;
-  grid-template-columns: 60px 1fr 2fr 100px 120px 100px 100px 120px;
+  grid-template-columns: 60px 1fr 2fr 100px 120px 100px 100px 160px;
   gap: ${props => props.theme.spacing[4]};
   padding: ${props => props.theme.spacing[4]} ${props => props.theme.spacing[5]};
   background: ${props => props.theme.colors.background};
@@ -155,7 +155,7 @@ const TableHeader = styled.div`
 
 const TableRow = styled.div`
   display: grid;
-  grid-template-columns: 60px 1fr 2fr 100px 120px 100px 100px 120px;
+  grid-template-columns: 60px 1fr 2fr 100px 120px 100px 100px 160px;
   gap: ${props => props.theme.spacing[4]};
   padding: ${props => props.theme.spacing[4]} ${props => props.theme.spacing[5]};
   border-bottom: 1px solid ${props => props.theme.colors.border};
@@ -301,7 +301,7 @@ const Actions = styled.div`
   gap: ${props => props.theme.spacing[2]};
 `;
 
-const ActionButton = styled.button<{ $variant?: 'edit' | 'delete' }>`
+const ActionButton = styled.button<{ $variant?: 'edit' | 'delete' | 'refresh'; $isRefreshing?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -317,21 +317,41 @@ const ActionButton = styled.button<{ $variant?: 'edit' | 'delete' }>`
   &:hover {
     background: ${props => {
       if (props.$variant === 'delete') return '#ef444422';
+      if (props.$variant === 'refresh') return props.theme.colors.primary + '22';
       return props.theme.colors.surfaceHover;
     }};
     border-color: ${props => {
       if (props.$variant === 'delete') return '#ef4444';
+      if (props.$variant === 'refresh') return props.theme.colors.primary;
       return props.theme.colors.border;
     }};
     color: ${props => {
       if (props.$variant === 'delete') return '#ef4444';
+      if (props.$variant === 'refresh') return props.theme.colors.primary;
       return props.theme.colors.text;
     }};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   svg {
     width: 16px;
     height: 16px;
+    ${props => props.$isRefreshing && `
+      animation: spin 1s linear infinite;
+    `}
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 `;
 
@@ -354,12 +374,13 @@ const EmptyState = styled.div`
 
 export const SourcesPage: React.FC = () => {
   const navigate = useNavigate();
-  const { sources, deleteSource } = useFeedSourceStore();
-  const { items: feedItems } = useFeedStore();
+  const { sources, deleteSource, refreshSource } = useFeedSourceStore();
+  const { items: feedItems, fetchItems } = useFeedStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedSource, setSelectedSource] = useState<FeedSource | null>(null);
+  const [refreshingSourceId, setRefreshingSourceId] = useState<string | null>(null);
 
   // Filter sources by search query
   const filteredSources = useMemo(() => {
@@ -385,6 +406,18 @@ export const SourcesPage: React.FC = () => {
   const handleDelete = (source: FeedSource) => {
     if (confirm(`Are you sure you want to delete "${source.name}"?`)) {
       deleteSource(source.id);
+    }
+  };
+
+  const handleRefresh = async (source: FeedSource) => {
+    setRefreshingSourceId(source.id);
+    try {
+      await refreshSource(source.id);
+      await fetchItems({ limit: 500 });
+    } catch (error) {
+      console.error('Failed to refresh source:', error);
+    } finally {
+      setRefreshingSourceId(null);
     }
   };
 
@@ -486,10 +519,19 @@ export const SourcesPage: React.FC = () => {
                   </StatusBadge>
 
                   <Actions>
-                    <ActionButton $variant="edit" onClick={() => handleEdit(source)}>
+                    <ActionButton
+                      $variant="refresh"
+                      $isRefreshing={refreshingSourceId === source.id}
+                      onClick={() => handleRefresh(source)}
+                      disabled={refreshingSourceId === source.id}
+                      title="Refresh source"
+                    >
+                      <RefreshCw />
+                    </ActionButton>
+                    <ActionButton $variant="edit" onClick={() => handleEdit(source)} title="Edit source">
                       <Edit2 />
                     </ActionButton>
-                    <ActionButton $variant="delete" onClick={() => handleDelete(source)}>
+                    <ActionButton $variant="delete" onClick={() => handleDelete(source)} title="Delete source">
                       <Trash2 />
                     </ActionButton>
                   </Actions>

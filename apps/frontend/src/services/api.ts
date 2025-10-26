@@ -92,7 +92,7 @@ class ApiClient {
     return this.request<any[]>('/sources');
   }
 
-  async createSource(data: { name: string; url: string; category?: string }) {
+  async createSource(data: { name: string; url: string; type?: string; channelId?: string; category?: string }) {
     return this.request<any>('/sources', {
       method: 'POST',
       body: JSON.stringify(data),

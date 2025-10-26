@@ -28,7 +28,8 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
           name: s.name,
           url: s.url,
           icon: s.iconUrl,
-          type: 'rss' as const,
+          type: s.type || 'rss',
+          channelId: s.channelId,
           category: s.category,
           isEnabled: true,
           whitelistKeywords: s.whitelistKeywords || [],
@@ -49,6 +50,8 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
       const source = await api.createSource({
         name: input.name,
         url: input.url,
+        type: input.type,
+        channelId: input.channelId,
         category: input.category,
       });
 
@@ -57,7 +60,8 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
         name: source.name,
         url: source.url,
         icon: source.iconUrl,
-        type: 'rss',
+        type: source.type || 'rss',
+        channelId: source.channelId,
         category: source.category,
         isEnabled: true,
         whitelistKeywords: [],

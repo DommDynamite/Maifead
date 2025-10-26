@@ -40,13 +40,15 @@ export const initializeDatabase = () => {
     )
   `);
 
-  // Sources table (RSS feed sources)
+  // Sources table (RSS feed sources, YouTube channels, Reddit feeds)
   db.exec(`
     CREATE TABLE IF NOT EXISTS sources (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
       name TEXT NOT NULL,
       url TEXT NOT NULL,
+      type TEXT DEFAULT 'rss',
+      channel_id TEXT,
       icon_url TEXT,
       description TEXT,
       category TEXT,
@@ -69,6 +71,19 @@ export const initializeDatabase = () => {
 
   try {
     db.exec(`ALTER TABLE sources ADD COLUMN blacklist_keywords TEXT`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
+  // Add YouTube/source type columns to existing sources table if they don't exist
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN type TEXT DEFAULT 'rss'`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN channel_id TEXT`);
   } catch (error) {
     // Column already exists, ignore error
   }

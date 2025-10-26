@@ -7,6 +7,8 @@ const parser = new Parser({
   customFields: {
     item: [
       ['media:content', 'media'],
+      ['media:thumbnail', 'mediaThumbnail'],
+      ['media:group', 'mediaGroup'],
       ['content:encoded', 'contentEncoded'],
       ['description', 'description'],
     ],
@@ -23,11 +25,150 @@ interface ParsedFeedItem {
   author?: string;
   enclosure?: { url: string };
   media?: { $: { url: string } };
+  mediaThumbnail?: { $: { url: string } } | Array<{ $: { url: string; width?: string; height?: string } }>;
+  mediaGroup?: {
+    'media:thumbnail'?: Array<{ $: { url: string; width?: string; height?: string } }>;
+    'media:description'?: Array<{ _: string }>;
+    'media:content'?: Array<{ $: { url: string } }>;
+  };
   contentEncoded?: string;
   description?: string;
 }
 
 export class FeedService {
+  /**
+   * Extract YouTube channel ID from various URL formats
+   * Supports:
+   * - https://www.youtube.com/@username
+   * - https://www.youtube.com/c/ChannelName
+   * - https://www.youtube.com/channel/CHANNEL_ID
+   * - https://www.youtube.com/user/username
+   */
+  static extractYouTubeChannelId(url: string): string | null {
+    try {
+      const urlObj = new URL(url);
+
+      // Handle RSS feed URL format: /feeds/videos.xml?channel_id=UCxxxxxxxxxx
+      if (urlObj.pathname === '/feeds/videos.xml' && urlObj.searchParams.has('channel_id')) {
+        return urlObj.searchParams.get('channel_id');
+      }
+
+      // Handle video URLs - we'll need to fetch the channel ID from the video page
+      // /watch?v=VIDEO_ID or /shorts/VIDEO_ID
+      if (urlObj.pathname === '/watch' || urlObj.pathname.startsWith('/shorts/')) {
+        return 'VIDEO_URL'; // Special marker to indicate we need to fetch from video page
+      }
+
+      // Handle @username format
+      const atMatch = urlObj.pathname.match(/^\/@([\w-]+)/);
+      if (atMatch) {
+        return `@${atMatch[1]}`;
+      }
+
+      // Handle /c/ChannelName format
+      const cMatch = urlObj.pathname.match(/^\/c\/([\w-]+)/);
+      if (cMatch) {
+        return cMatch[1];
+      }
+
+      // Handle /channel/CHANNEL_ID format
+      const channelMatch = urlObj.pathname.match(/^\/channel\/([\w-]+)/);
+      if (channelMatch) {
+        return channelMatch[1];
+      }
+
+      // Handle /user/username format
+      const userMatch = urlObj.pathname.match(/^\/user\/([\w-]+)/);
+      if (userMatch) {
+        return userMatch[1];
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error extracting YouTube channel ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch the actual YouTube channel ID from a channel URL
+   * Handles @username, /c/, /user/ formats by scraping the channel page
+   */
+  static async getYouTubeChannelId(url: string): Promise<string | null> {
+    try {
+      const response = await fetch(url);
+      const html = await response.text();
+
+      // Try to find channel ID in the HTML
+      // Look for pattern: "channelId":"UCxxxxxxxxxxxxxxxxxx"
+      const channelIdMatch = html.match(/"channelId":"(UC[\w-]+)"/);
+      if (channelIdMatch) {
+        return channelIdMatch[1];
+      }
+
+      // Alternative pattern: "browse_id":"UCxxxxxxxxxxxxxxxxxx"
+      const browseIdMatch = html.match(/"browse_id":"(UC[\w-]+)"/);
+      if (browseIdMatch) {
+        return browseIdMatch[1];
+      }
+
+      // Another pattern in meta tags
+      const metaMatch = html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[\w-]+)"/);
+      if (metaMatch) {
+        return metaMatch[1];
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching YouTube channel ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch YouTube channel avatar/icon URL
+   */
+  static async getYouTubeChannelIcon(url: string): Promise<string | null> {
+    try {
+      const response = await fetch(url);
+      const html = await response.text();
+
+      // Look for avatar in the JSON data structure
+      // Pattern 1: "avatar":{"avatarViewModel":{"image":{"sources":[{"url":"...
+      const avatarViewModelMatch = html.match(/"avatar":\{"avatarViewModel":\{"image":\{"sources":\[\{"url":"([^"]+)"/);
+      if (avatarViewModelMatch) {
+        // Remove size parameters and replace with higher resolution
+        const avatarUrl = avatarViewModelMatch[1].replace(/=s\d+-/, '=s240-');
+        return avatarUrl;
+      }
+
+      // Pattern 2: "avatar":{"thumbnails":[{"url":"...
+      const avatarThumbnailsMatch = html.match(/"avatar":\s*\{\s*"thumbnails":\s*\[\s*\{\s*"url":\s*"([^"]+)"/);
+      if (avatarThumbnailsMatch) {
+        const avatarUrl = avatarThumbnailsMatch[1].replace(/=s\d+-/, '=s240-');
+        return avatarUrl;
+      }
+
+      // Fallback: try to extract from link tag with image_src
+      const linkImageMatch = html.match(/<link rel="image_src" href="([^"]+)"/);
+      if (linkImageMatch && linkImageMatch[1].includes('yt3.ggpht.com')) {
+        return linkImageMatch[1];
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching YouTube channel icon:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Convert YouTube channel ID to RSS feed URL
+   */
+  static convertYouTubeToRss(channelId: string): string {
+    return `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+  }
+
   /**
    * Fetch and parse an RSS feed from a URL
    */
@@ -65,6 +206,53 @@ export class FeedService {
   }
 
   /**
+   * Extract video ID from YouTube URL
+   */
+  private static extractYouTubeVideoId(url: string): string | null {
+    try {
+      const urlObj = new URL(url);
+
+      // Handle youtube.com/watch?v=VIDEO_ID
+      if (urlObj.hostname.includes('youtube.com') && urlObj.searchParams.has('v')) {
+        return urlObj.searchParams.get('v');
+      }
+
+      // Handle youtu.be/VIDEO_ID
+      if (urlObj.hostname === 'youtu.be') {
+        return urlObj.pathname.slice(1);
+      }
+
+      // Handle youtube.com/shorts/VIDEO_ID
+      const shortsMatch = urlObj.pathname.match(/^\/shorts\/([\w-]+)/);
+      if (shortsMatch) {
+        return shortsMatch[1];
+      }
+
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Create YouTube embed HTML
+   */
+  private static createYouTubeEmbed(videoId: string, description?: string): string {
+    return `
+      <div class="youtube-embed" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 1rem 0;">
+        <iframe
+          src="https://www.youtube.com/embed/${videoId}"
+          style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+      ${description ? `<p>${description}</p>` : ''}
+    `.trim();
+  }
+
+  /**
    * Fetch and store feed items for a specific source
    */
   static async fetchAndStoreItems(source: Source): Promise<number> {
@@ -82,9 +270,38 @@ export class FeedService {
         // Extract image URL from various possible locations
         const imageUrl = this.extractImageUrl(item);
 
-        // Extract content
-        const content = (item as any).contentEncoded || item.content || item.description || '';
-        const excerpt = this.createExcerpt(item.contentSnippet || content);
+        // Extract content - for YouTube, create embedded player
+        let content = (item as any).contentEncoded || item.content || item.description || '';
+
+        // If this is a YouTube source, create embedded video
+        if (source.type === 'youtube' && item.link) {
+          const videoId = this.extractYouTubeVideoId(item.link);
+          if (videoId) {
+            // Get description from multiple possible locations
+            let description = '';
+
+            // Try media:group['media:description'] (can be array or string)
+            const mediaDesc = item.mediaGroup?.['media:description'];
+            if (mediaDesc) {
+              if (Array.isArray(mediaDesc)) {
+                description = mediaDesc[0]?._ || mediaDesc[0] || '';
+              } else if (typeof mediaDesc === 'string') {
+                description = mediaDesc;
+              } else if (typeof mediaDesc === 'object' && '_' in mediaDesc) {
+                description = (mediaDesc as any)._ || '';
+              }
+            }
+
+            // Fallback to description field
+            if (!description && item.description) {
+              description = item.description;
+            }
+
+            content = this.createYouTubeEmbed(videoId, description);
+          }
+        }
+
+        const excerpt = this.createExcerpt(item.contentSnippet || item.description || content);
 
         // Create feed item
         const feedItem: Omit<FeedItem, 'createdAt'> & { createdAt: number } = {
@@ -176,6 +393,40 @@ export class FeedService {
    * Extract image URL from various feed item formats
    */
   private static extractImageUrl(item: ParsedFeedItem): string | undefined {
+    // Try media:group (YouTube uses this)
+    if (item.mediaGroup) {
+      // Try media:thumbnail in media:group
+      const thumbnails = item.mediaGroup['media:thumbnail'];
+      if (thumbnails && Array.isArray(thumbnails) && thumbnails.length > 0) {
+        // Get the largest thumbnail (last one is usually highest resolution)
+        const thumbnail = thumbnails[thumbnails.length - 1];
+        if (thumbnail?.$ && thumbnail.$.url) {
+          return thumbnail.$.url;
+        }
+      }
+
+      // Try media:content in media:group
+      const mediaContent = item.mediaGroup['media:content'];
+      if (mediaContent && Array.isArray(mediaContent) && mediaContent.length > 0) {
+        const content = mediaContent[0];
+        if (content?.$ && content.$.url) {
+          return content.$.url;
+        }
+      }
+    }
+
+    // Try media:thumbnail directly
+    if (item.mediaThumbnail) {
+      if (Array.isArray(item.mediaThumbnail) && item.mediaThumbnail.length > 0) {
+        const thumbnail = item.mediaThumbnail[item.mediaThumbnail.length - 1];
+        if (thumbnail?.$ && thumbnail.$.url) {
+          return thumbnail.$.url;
+        }
+      } else if (typeof item.mediaThumbnail === 'object' && '$' in item.mediaThumbnail) {
+        return item.mediaThumbnail.$.url;
+      }
+    }
+
     // Try media:content
     if (item.media && typeof item.media === 'object' && '$' in item.media) {
       return item.media.$.url;
@@ -250,6 +501,8 @@ export class FeedService {
       userId: row.user_id,
       name: row.name,
       url: row.url,
+      type: row.type || 'rss',
+      channelId: row.channel_id,
       iconUrl: row.icon_url,
       description: row.description,
       category: row.category,

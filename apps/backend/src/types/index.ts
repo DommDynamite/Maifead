@@ -16,11 +16,15 @@ export interface UserPreferences {
   feedLayout: 'single' | 'double' | 'triple';
 }
 
+export type SourceType = 'rss' | 'youtube' | 'reddit';
+
 export interface Source {
   id: string;
   userId: string;
   name: string;
   url: string;
+  type: SourceType;
+  channelId?: string; // YouTube channel ID
   iconUrl?: string;
   description?: string;
   category?: string;
@@ -84,6 +88,8 @@ export interface AuthResponse {
 export interface CreateSourceRequest {
   name: string;
   url: string;
+  type?: SourceType;
+  channelId?: string;
   category?: string;
   whitelistKeywords?: string[];
   blacklistKeywords?: string[];

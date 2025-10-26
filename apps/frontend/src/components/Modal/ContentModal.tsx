@@ -299,6 +299,30 @@ const Content = styled.div`
     margin: ${props => props.theme.spacing[4]} auto !important;
   }
 
+  /* YouTube embed styling */
+  .youtube-embed {
+    margin: ${props => props.theme.spacing[4]} 0 !important;
+    border-radius: ${props => props.theme.borderRadius.md};
+    overflow: hidden;
+
+    iframe {
+      margin: 0 !important;
+      border-radius: ${props => props.theme.borderRadius.md};
+    }
+
+    /* Description below YouTube video */
+    + p {
+      margin-top: ${props => props.theme.spacing[4]};
+      padding: ${props => props.theme.spacing[4]};
+      background: ${props => props.theme.colors.surfaceHover};
+      border-radius: ${props => props.theme.borderRadius.md};
+      border-left: 3px solid ${props => props.theme.colors.primary};
+      color: ${props => props.theme.colors.text};
+      font-size: ${props => props.theme.fontSizes.sm};
+      line-height: ${props => props.theme.lineHeights.relaxed};
+    }
+  }
+
   img {
     max-width: 100% !important;
     width: auto !important;
@@ -620,6 +644,9 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
   const primaryMedia = item.media?.[0];
   const isRead = readItemIds.includes(item.id);
 
+  // Check if content contains YouTube embed
+  const hasYouTubeEmbed = item.content.html?.includes('youtube-embed') || item.content.html?.includes('youtube.com/embed');
+
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -667,7 +694,8 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
               <Title>{item.title}</Title>
               {item.author && <Author>By {item.author.name}</Author>}
 
-              {primaryMedia && primaryMedia.type === 'image' && (
+              {/* Only show thumbnail if content doesn't have YouTube embed */}
+              {!hasYouTubeEmbed && primaryMedia && primaryMedia.type === 'image' && (
                 <MediaContainer>
                   <MediaImage
                     src={primaryMedia.url}
@@ -677,7 +705,8 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
                 </MediaContainer>
               )}
 
-              {primaryMedia && primaryMedia.type === 'video' && primaryMedia.embedUrl && (
+              {/* Only show video embed if content doesn't have YouTube embed */}
+              {!hasYouTubeEmbed && primaryMedia && primaryMedia.type === 'video' && primaryMedia.embedUrl && (
                 <MediaContainer>
                   <VideoEmbed>
                     <iframe
@@ -690,6 +719,7 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
                 </MediaContainer>
               )}
 
+              {/* Content includes YouTube embed with description for YouTube sources */}
               <Content ref={contentRef} dangerouslySetInnerHTML={{ __html: item.content.html || item.content.text }} />
             </ModalContent>
 
