@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { X, ExternalLink, BookmarkPlus, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -238,6 +238,28 @@ const Content = styled.div`
     font-style: italic;
   }
 
+  /* Twitter/X embed styling */
+  .twitter-tweet {
+    margin: ${props => props.theme.spacing[4]} auto !important;
+  }
+
+  /* Instagram embed styling */
+  .instagram-media {
+    margin: ${props => props.theme.spacing[4]} auto !important;
+    max-width: 540px !important;
+  }
+
+  /* Generic iframe styling */
+  iframe {
+    max-width: 100%;
+    margin: ${props => props.theme.spacing[4]} 0;
+  }
+
+  /* TikTok embed styling */
+  .tiktok-embed {
+    margin: ${props => props.theme.spacing[4]} auto !important;
+  }
+
   img {
     max-width: 100%;
     height: auto;
@@ -329,6 +351,58 @@ const ActionButton = styled.button<{ $primary?: boolean }>`
 
 export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClose, onToggleRead }) => {
   const { readItemIds } = useUIStore();
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Load and process embedded content
+  useEffect(() => {
+    if (!isOpen || !item || !contentRef.current) return;
+
+    const content = item.content.html || item.content.text || '';
+
+    // Load Twitter/X embed script
+    if (content.includes('twitter.com') || content.includes('x.com') || content.includes('twitter-tweet')) {
+      const script = document.createElement('script');
+      script.src = 'https://platform.twitter.com/widgets.js';
+      script.async = true;
+      script.charset = 'utf-8';
+
+      if (!document.querySelector('script[src*="platform.twitter.com"]')) {
+        document.body.appendChild(script);
+      } else {
+        // If script already loaded, re-process tweets
+        if (window.twttr?.widgets) {
+          window.twttr.widgets.load(contentRef.current);
+        }
+      }
+    }
+
+    // Load Instagram embed script
+    if (content.includes('instagram.com') || content.includes('instagram-media')) {
+      const script = document.createElement('script');
+      script.src = 'https://www.instagram.com/embed.js';
+      script.async = true;
+
+      if (!document.querySelector('script[src*="instagram.com/embed.js"]')) {
+        document.body.appendChild(script);
+      } else {
+        // If script already loaded, re-process embeds
+        if (window.instgrm?.Embeds) {
+          window.instgrm.Embeds.process();
+        }
+      }
+    }
+
+    // Load TikTok embed script
+    if (content.includes('tiktok.com') || content.includes('tiktok-embed')) {
+      const script = document.createElement('script');
+      script.src = 'https://www.tiktok.com/embed.js';
+      script.async = true;
+
+      if (!document.querySelector('script[src*="tiktok.com/embed.js"]')) {
+        document.body.appendChild(script);
+      }
+    }
+  }, [isOpen, item]);
 
   // Close on Escape key
   useEffect(() => {
@@ -419,7 +493,7 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
                 </MediaContainer>
               )}
 
-              <Content dangerouslySetInnerHTML={{ __html: item.content.html || item.content.text }} />
+              <Content ref={contentRef} dangerouslySetInnerHTML={{ __html: item.content.html || item.content.text }} />
             </ModalContent>
 
             <ModalFooter>

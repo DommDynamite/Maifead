@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { RefreshCw, Settings, BarChart3 } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
 import { SettingsPanel } from '../SettingsPanel';
 import { useUIStore } from '../../stores/uiStore';
+import { useFeedStore } from '../../stores/feedStore';
+import { useToastStore } from '../../stores/toastStore';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -58,7 +60,7 @@ const HeaderActions = styled.div`
   gap: ${props => props.theme.spacing[2]};
 `;
 
-const IconButton = styled.button`
+const IconButton = styled.button<{ $isSpinning?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -80,9 +82,24 @@ const IconButton = styled.button`
     background: ${props => props.theme.colors.surfaceActive};
   }
 
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   svg {
     width: 20px;
     height: 20px;
+    animation: ${props => props.$isSpinning ? 'spin 1s linear infinite' : 'none'};
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 `;
 
@@ -91,11 +108,22 @@ const Main = styled.main`
 `;
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toggleSettingsPanel, toggleFeedControlsPanel } = useUIStore();
+  const { fetchItems } = useFeedStore();
+  const { addToast } = useToastStore();
 
-  const handleRefresh = () => {
-    console.log('Refresh clicked');
-    // TODO: Implement refresh functionality
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchItems({ limit: 100 });
+      addToast({ message: 'Feed refreshed successfully', type: 'success' });
+    } catch (error) {
+      console.error('Refresh error:', error);
+      addToast({ message: 'Failed to refresh feed', type: 'error' });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   return (
@@ -105,7 +133,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           Mai<span>fead</span>
         </Logo>
         <HeaderActions>
-          <IconButton onClick={handleRefresh} aria-label="Refresh feed" title="Refresh feed">
+          <IconButton
+            onClick={handleRefresh}
+            aria-label="Refresh feed"
+            title="Refresh feed"
+            $isSpinning={isRefreshing}
+            disabled={isRefreshing}
+          >
             <RefreshCw />
           </IconButton>
           <IconButton onClick={toggleFeedControlsPanel} aria-label="Feed controls" title="Feed controls & statistics">

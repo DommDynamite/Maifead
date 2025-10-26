@@ -4,11 +4,12 @@ import type { ContentItem } from '@maifead/types';
 import { Card } from '../components/Card/Card';
 import { ContentModal } from '../components/Modal/ContentModal';
 import { SearchBar } from '../components/SearchBar/SearchBar';
-import { mockFeedItems } from '../data/mockFeed';
 import { useUIStore, type FeedLayout } from '../stores/uiStore';
 import { useFeadStore } from '../stores/feadStore';
 import { useFeedSourceStore } from '../stores/feedSourceStore';
 import { useCollectionStore } from '../stores/collectionStore';
+import { useFeedStore } from '../stores/feedStore';
+import { useAuthStore } from '../stores/authStore';
 import { applySourceFiltersToItems } from '../utils/filterUtils';
 import { useKeyboardShortcuts, type KeyboardShortcut } from '../hooks/useKeyboardShortcuts';
 import { KeyboardShortcutsHelp } from '../components/KeyboardShortcuts/KeyboardShortcutsHelp';
@@ -114,10 +115,45 @@ export const FeedView: React.FC = () => {
   } = useUIStore();
   const { sources } = useFeedSourceStore();
   const { collections } = useCollectionStore();
+  const { items: feedItems, isLoading: isFetchingItems, markItemRead, markItemSaved } = useFeedStore();
+  const { isAuthenticated } = useAuthStore();
+
+  // Convert feed items to ContentItem format for UI
+  const contentItems: ContentItem[] = useMemo(() => {
+    return feedItems.map(item => {
+      const source = sources.find(s => s.id === item.sourceId);
+      return {
+        id: item.id,
+        title: item.title,
+        source: {
+          name: source?.name || 'Unknown Source',
+          icon: source?.icon || '',
+        },
+        publishedAt: item.publishedAt || new Date(),
+        author: item.author ? { name: item.author } : undefined,
+        content: {
+          text: item.content || '',
+          html: item.content || '',
+          excerpt: item.excerpt || '',
+        },
+        media: item.imageUrl ? [{
+          type: 'image' as const,
+          url: item.imageUrl,
+          alt: item.title,
+        }] : undefined,
+        thumbnailUrl: item.imageUrl,
+        link: item.link,
+        url: item.link,
+        isRead: item.read,
+        isSaved: item.saved,
+        tags: [],
+      };
+    });
+  }, [feedItems, sources]);
 
   // Filter and search items
   const filteredItems = useMemo(() => {
-    let items = mockFeedItems;
+    let items = contentItems;
 
     // STEP 1: Apply per-source filters (whitelist/blacklist keywords)
     items = applySourceFiltersToItems(items, sources);
@@ -389,7 +425,7 @@ export const FeedView: React.FC = () => {
           </CardList>
         ) : filteredItems.length === 0 ? (
           <EmptyStateComponent
-            type={searchQuery ? 'no-results' : mockFeedItems.length === 0 ? 'no-items' : 'no-results'}
+            type={searchQuery ? 'no-results' : contentItems.length === 0 ? 'no-items' : 'no-results'}
           />
         ) : (
           <CardList $layout={feedLayout}>

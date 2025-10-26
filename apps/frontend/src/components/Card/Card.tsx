@@ -124,8 +124,8 @@ const Excerpt = styled.p<{ $compact?: boolean }>`
   color: ${props => props.theme.colors.textSecondary};
   line-height: ${props => props.theme.lineHeights.normal};
   margin: 0;
-  display: ${props => (props.$compact ? 'none' : '-webkit-box')};
-  -webkit-line-clamp: 3;
+  display: -webkit-box;
+  -webkit-line-clamp: ${props => (props.$compact ? 2 : 3)};
   -webkit-box-orient: vertical;
   overflow: hidden;
 `;
@@ -271,7 +271,7 @@ export const Card: React.FC<CardProps> = ({ item, onClick, viewMode = 'detailed'
 
       <CardBody $compact={isCompact}>
         <Title $compact={isCompact}>{item.title}</Title>
-        {item.content.excerpt && <Excerpt $compact={isCompact}>{item.content.excerpt}</Excerpt>}
+        {item.content?.excerpt && <Excerpt $compact={isCompact}>{item.content.excerpt}</Excerpt>}
         {isCompact && (
           <CompactInfo>
             <CompactSourceName>{item.source.name}</CompactSourceName>

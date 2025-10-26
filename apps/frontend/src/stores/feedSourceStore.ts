@@ -1,167 +1,137 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { api } from '../services/api';
 import type { FeedSource, FeedSourceInput, FeedSourceUpdate } from '@maifead/types';
 
 interface FeedSourceStore {
   sources: FeedSource[];
-  createSource: (input: FeedSourceInput) => FeedSource;
-  updateSource: (id: string, updates: FeedSourceUpdate) => void;
-  deleteSource: (id: string) => void;
+  isLoading: boolean;
+  fetchSources: () => Promise<void>;
+  createSource: (input: FeedSourceInput) => Promise<FeedSource>;
+  updateSource: (id: string, updates: FeedSourceUpdate) => Promise<void>;
+  deleteSource: (id: string) => Promise<void>;
+  refreshSource: (id: string) => Promise<void>;
   getSource: (id: string) => FeedSource | undefined;
   getSourceByName: (name: string) => FeedSource | undefined;
 }
 
-const generateId = () => {
-  return `source-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-};
+export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
+  sources: [],
+  isLoading: false,
 
-export const useFeedSourceStore = create<FeedSourceStore>()(
-  persist(
-    (set, get) => ({
-      sources: [
-        {
-          id: 'source-fireship',
-          name: 'Fireship',
-          url: 'https://www.youtube.com/@Fireship',
-          icon: 'https://yt3.googleusercontent.com/ytc/AIdro_kGRQ7HKXJjkJR4fXBDjVjJGmR8lFZgVp2P91WZ=s176-c-k-c0x00ffffff-no-rj',
-          type: 'rss',
+  fetchSources: async () => {
+    set({ isLoading: true });
+    try {
+      const sources = await api.getSources();
+      set({
+        sources: sources.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          url: s.url,
+          icon: s.iconUrl,
+          type: 'rss' as const,
+          category: s.category,
           isEnabled: true,
-          whitelistKeywords: [],
-          blacklistKeywords: [],
-          createdAt: new Date('2024-01-01'),
-          updatedAt: new Date('2024-01-01'),
-        },
-        {
-          id: 'source-css-tricks',
-          name: 'CSS-Tricks',
-          url: 'https://css-tricks.com/feed/',
-          icon: 'https://css-tricks.com/favicon.ico',
-          type: 'rss',
-          isEnabled: true,
-          whitelistKeywords: [],
-          blacklistKeywords: [],
-          createdAt: new Date('2024-01-01'),
-          updatedAt: new Date('2024-01-01'),
-        },
-        {
-          id: 'source-rust-blog',
-          name: 'Rust Blog',
-          url: 'https://blog.rust-lang.org/feed.xml',
-          icon: 'https://www.rust-lang.org/favicon.ico',
-          type: 'rss',
-          isEnabled: true,
-          whitelistKeywords: [],
-          blacklistKeywords: [],
-          createdAt: new Date('2024-01-01'),
-          updatedAt: new Date('2024-01-01'),
-        },
-        {
-          id: 'source-ala',
-          name: 'A List Apart',
-          url: 'https://alistapart.com/feed/',
-          icon: 'https://alistapart.com/favicon.ico',
-          type: 'rss',
-          isEnabled: true,
-          whitelistKeywords: [],
-          blacklistKeywords: [],
-          createdAt: new Date('2024-01-01'),
-          updatedAt: new Date('2024-01-01'),
-        },
-        {
-          id: 'source-smashing',
-          name: 'Smashing Magazine',
-          url: 'https://www.smashingmagazine.com/feed/',
-          icon: 'https://www.smashingmagazine.com/favicon.ico',
-          type: 'rss',
-          isEnabled: true,
-          whitelistKeywords: [],
-          blacklistKeywords: [],
-          createdAt: new Date('2024-01-01'),
-          updatedAt: new Date('2024-01-01'),
-        },
-        {
-          id: 'source-the-verge',
-          name: 'The Verge',
-          url: 'https://www.theverge.com/rss/index.xml',
-          icon: 'https://www.theverge.com/favicon.ico',
-          type: 'rss',
-          isEnabled: true,
-          whitelistKeywords: [],
-          blacklistKeywords: [],
-          createdAt: new Date('2024-01-01'),
-          updatedAt: new Date('2024-01-01'),
-        },
-        {
-          id: 'source-techcrunch',
-          name: 'TechCrunch',
-          url: 'https://techcrunch.com/feed/',
-          icon: 'https://techcrunch.com/favicon.ico',
-          type: 'rss',
-          isEnabled: true,
-          whitelistKeywords: [],
-          blacklistKeywords: [],
-          createdAt: new Date('2024-01-01'),
-          updatedAt: new Date('2024-01-01'),
-        },
-        {
-          id: 'source-hacker-news',
-          name: 'Hacker News',
-          url: 'https://news.ycombinator.com/rss',
-          icon: 'https://news.ycombinator.com/favicon.ico',
-          type: 'rss',
-          isEnabled: true,
-          whitelistKeywords: [],
-          blacklistKeywords: [],
-          createdAt: new Date('2024-01-01'),
-          updatedAt: new Date('2024-01-01'),
-        },
-      ],
-
-      createSource: (input: FeedSourceInput) => {
-        const newSource: FeedSource = {
-          ...input,
-          id: generateId(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-
-        set(state => ({
-          sources: [...state.sources, newSource],
-        }));
-
-        return newSource;
-      },
-
-      updateSource: (id: string, updates: FeedSourceUpdate) => {
-        set(state => ({
-          sources: state.sources.map(source =>
-            source.id === id
-              ? {
-                  ...source,
-                  ...updates,
-                  updatedAt: new Date(),
-                }
-              : source
-          ),
-        }));
-      },
-
-      deleteSource: (id: string) => {
-        set(state => ({
-          sources: state.sources.filter(source => source.id !== id),
-        }));
-      },
-
-      getSource: (id: string) => {
-        return get().sources.find(source => source.id === id);
-      },
-
-      getSourceByName: (name: string) => {
-        return get().sources.find(source => source.name === name);
-      },
-    }),
-    {
-      name: 'maifead-feed-sources',
+          whitelistKeywords: s.whitelistKeywords || [],
+          blacklistKeywords: s.blacklistKeywords || [],
+          createdAt: new Date(s.createdAt),
+          updatedAt: new Date(s.updatedAt),
+        })),
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error('Failed to fetch sources:', error);
+      set({ isLoading: false });
     }
-  )
-);
+  },
+
+  createSource: async (input: FeedSourceInput) => {
+    try {
+      const source = await api.createSource({
+        name: input.name,
+        url: input.url,
+        category: input.category,
+      });
+
+      const newSource: FeedSource = {
+        id: source.id,
+        name: source.name,
+        url: source.url,
+        icon: source.iconUrl,
+        type: 'rss',
+        category: source.category,
+        isEnabled: true,
+        whitelistKeywords: [],
+        blacklistKeywords: [],
+        createdAt: new Date(source.createdAt),
+        updatedAt: new Date(source.updatedAt),
+      };
+
+      set(state => ({
+        sources: [...state.sources, newSource],
+      }));
+
+      return newSource;
+    } catch (error) {
+      console.error('Failed to create source:', error);
+      throw error;
+    }
+  },
+
+  updateSource: async (id: string, updates: FeedSourceUpdate) => {
+    try {
+      const updated = await api.updateSource(id, {
+        name: updates.name,
+        category: updates.category,
+        whitelistKeywords: updates.whitelistKeywords,
+        blacklistKeywords: updates.blacklistKeywords,
+      });
+
+      set(state => ({
+        sources: state.sources.map(source =>
+          source.id === id
+            ? {
+                ...source,
+                name: updated.name,
+                category: updated.category,
+                whitelistKeywords: updated.whitelistKeywords || [],
+                blacklistKeywords: updated.blacklistKeywords || [],
+                updatedAt: new Date(updated.updatedAt),
+              }
+            : source
+        ),
+      }));
+    } catch (error) {
+      console.error('Failed to update source:', error);
+      throw error;
+    }
+  },
+
+  deleteSource: async (id: string) => {
+    try {
+      await api.deleteSource(id);
+      set(state => ({
+        sources: state.sources.filter(source => source.id !== id),
+      }));
+    } catch (error) {
+      console.error('Failed to delete source:', error);
+      throw error;
+    }
+  },
+
+  refreshSource: async (id: string) => {
+    try {
+      await api.refreshSource(id);
+    } catch (error) {
+      console.error('Failed to refresh source:', error);
+      throw error;
+    }
+  },
+
+  getSource: (id: string) => {
+    return get().sources.find(source => source.id === id);
+  },
+
+  getSourceByName: (name: string) => {
+    return get().sources.find(source => source.name === name);
+  },
+}));

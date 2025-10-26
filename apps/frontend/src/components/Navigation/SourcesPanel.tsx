@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '../../stores/uiStore';
 import { useFeedSourceStore } from '../../stores/feedSourceStore';
-import { mockFeedItems } from '../../data/mockFeed';
+import { useFeedStore } from '../../stores/feedStore';
 
 const Backdrop = styled(motion.div)`
   position: fixed;
@@ -270,30 +270,48 @@ export const SourcesPanel: React.FC = () => {
   const { isSourcesPanelOpen, toggleSourcesPanel, selectedSourceNames, toggleSource, clearSourceSelection } =
     useUIStore();
   const { sources: feedSources } = useFeedSourceStore();
+  const { items: feedItems } = useFeedStore();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Get unique sources from mock data with item counts
+  // Get unique sources from feed items with item counts
   const sources = useMemo(() => {
     const sourceMap = new Map<
       string,
-      { name: string; count: number; icon?: string }
+      { name: string; count: number; icon?: string; id: string }
     >();
 
-    mockFeedItems.forEach(item => {
-      const existing = sourceMap.get(item.source.name);
-      if (existing) {
-        existing.count++;
-      } else {
-        sourceMap.set(item.source.name, {
-          name: item.source.name,
-          count: 1,
-          icon: item.source.icon,
+    // Count items per source
+    feedItems.forEach(item => {
+      const source = feedSources.find(s => s.id === item.sourceId);
+      if (source) {
+        const existing = sourceMap.get(source.name);
+        if (existing) {
+          existing.count++;
+        } else {
+          sourceMap.set(source.name, {
+            id: source.id,
+            name: source.name,
+            count: 1,
+            icon: source.icon,
+          });
+        }
+      }
+    });
+
+    // Add sources with 0 items
+    feedSources.forEach(source => {
+      if (!sourceMap.has(source.name)) {
+        sourceMap.set(source.name, {
+          id: source.id,
+          name: source.name,
+          count: 0,
+          icon: source.icon,
         });
       }
     });
 
     return Array.from(sourceMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, []);
+  }, [feedSources, feedItems]);
 
   const filteredSources = useMemo(() => {
     if (!searchQuery.trim()) return sources;

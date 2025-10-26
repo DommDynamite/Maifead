@@ -201,8 +201,8 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
 
     updateSource(source.id, {
       name: name.trim(),
-      whitelistKeywords: whitelistKeywords.length > 0 ? whitelistKeywords : undefined,
-      blacklistKeywords: blacklistKeywords.length > 0 ? blacklistKeywords : undefined,
+      whitelistKeywords: whitelistKeywords,
+      blacklistKeywords: blacklistKeywords,
     });
 
     handleClose();
