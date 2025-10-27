@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm create:*)"
+      "Bash(npm create:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd user authentication system, profile management, and enhanced theme customization\n\nThis commit introduces a complete authentication flow, user profile management, and comprehensive theme customization system for the Maifead RSS Feed Aggregator POC.\n\nAuthentication System:\n- Create authStore with mock backend using localStorage\n- Add login and signup functionality with validation\n- Implement AuthPage with tabbed login/signup UI\n- Add email format validation and password requirements\n- Support user profile data (display name, username, email, avatar)\n- Persist authentication state across sessions\n\nProfile Management:\n- Create ProfilePage for viewing and editing user information\n- Add edit mode with real-time validation\n- Implement account deletion with confirmation modal\n- Include danger zone section with warning UI\n- Show member since date and user statistics\n- Redirect to auth page if not authenticated\n\nTheme System Enhancements:\n- Create comprehensive theme presets with 10 color options\n- Add light and dark mode specific colors for each preset\n- Include background, surface, and border colors per mode\n- Fix ThemeProvider reactivity to properly apply color changes\n- Update SettingsPanel with theme mode toggle and color picker\n- Support persistent theme preferences per user\n\nNavigation Updates:\n- Add user authentication controls to IconRail\n- Show sign in button when not authenticated\n- Display user icon and logout when authenticated\n- Navigate to profile page on user icon click\n- Add /auth and /profile routes to App\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(pnpm install)",
+      "Bash(pnpm approve-builds:*)",
+      "Bash(pnpm rebuild:*)"
     ],
     "deny": [],
     "ask": []
