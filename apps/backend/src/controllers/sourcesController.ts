@@ -88,8 +88,9 @@ export class SourcesController {
         // Convert YouTube URL to RSS feed URL
         feedUrl = FeedService.convertYouTubeToRss(extractedChannelId);
 
-        // Fetch the channel icon from the page
-        iconUrl = await FeedService.getYouTubeChannelIcon(url) ||
+        // Fetch the channel icon from the channel page (not from a video page)
+        const channelUrl = `https://www.youtube.com/channel/${extractedChannelId}`;
+        iconUrl = await FeedService.getYouTubeChannelIcon(channelUrl) ||
                   'https://www.youtube.com/s/desktop/8f4c562e/img/favicon_144x144.png';
       }
 

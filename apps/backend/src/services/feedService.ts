@@ -130,34 +130,35 @@ export class FeedService {
    */
   static async getYouTubeChannelIcon(url: string): Promise<string | null> {
     try {
+      console.log(`[getYouTubeChannelIcon] Fetching URL: ${url}`);
       const response = await fetch(url);
       const html = await response.text();
 
-      // Look for avatar in the JSON data structure
-      // Pattern 1: "avatar":{"avatarViewModel":{"image":{"sources":[{"url":"...
-      const avatarViewModelMatch = html.match(/"avatar":\{"avatarViewModel":\{"image":\{"sources":\[\{"url":"([^"]+)"/);
-      if (avatarViewModelMatch) {
-        // Remove size parameters and replace with higher resolution
-        const avatarUrl = avatarViewModelMatch[1].replace(/=s\d+-/, '=s240-');
-        return avatarUrl;
-      }
+      // Try meta tag first (most specific to this channel)
+      const metaAvatarMatch = html.match(/<link itemprop="thumbnailUrl" href="([^"]+)"/);
+      console.log(`[getYouTubeChannelIcon] Meta match:`, metaAvatarMatch ? metaAvatarMatch[1].substring(0, 100) : 'NOT FOUND');
 
-      // Pattern 2: "avatar":{"thumbnails":[{"url":"...
-      const avatarThumbnailsMatch = html.match(/"avatar":\s*\{\s*"thumbnails":\s*\[\s*\{\s*"url":\s*"([^"]+)"/);
-      if (avatarThumbnailsMatch) {
-        const avatarUrl = avatarThumbnailsMatch[1].replace(/=s\d+-/, '=s240-');
+      if (metaAvatarMatch && metaAvatarMatch[1].includes('yt3.google')) {
+        // Normalize to 240px size
+        const avatarUrl = metaAvatarMatch[1].replace(/=s\d+-/, '=s240-');
+        console.log(`[getYouTubeChannelIcon] Returning from meta tag: ${avatarUrl.substring(0, 100)}`);
         return avatarUrl;
       }
 
       // Fallback: try to extract from link tag with image_src
       const linkImageMatch = html.match(/<link rel="image_src" href="([^"]+)"/);
-      if (linkImageMatch && linkImageMatch[1].includes('yt3.ggpht.com')) {
-        return linkImageMatch[1];
+      console.log(`[getYouTubeChannelIcon] Link match:`, linkImageMatch ? linkImageMatch[1].substring(0, 100) : 'NOT FOUND');
+
+      if (linkImageMatch && linkImageMatch[1].includes('yt3.google')) {
+        const avatarUrl = linkImageMatch[1].replace(/=s\d+-/, '=s240-');
+        console.log(`[getYouTubeChannelIcon] Returning from link tag: ${avatarUrl.substring(0, 100)}`);
+        return avatarUrl;
       }
 
+      console.warn(`[getYouTubeChannelIcon] No valid icon found for ${url}`);
       return null;
     } catch (error) {
-      console.error('Error fetching YouTube channel icon:', error);
+      console.error('[getYouTubeChannelIcon] Error:', error);
       return null;
     }
   }
@@ -393,21 +394,84 @@ export class FeedService {
   }
 
   /**
-   * Create YouTube embed HTML
+   * Format YouTube description with proper line breaks, clickable links, and timestamps
    */
-  private static createYouTubeEmbed(videoId: string, description?: string): string {
-    return `
-      <div class="youtube-embed" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 1rem 0;">
-        <iframe
-          src="https://www.youtube.com/embed/${videoId}"
-          style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen>
-        </iframe>
-      </div>
-      ${description ? `<p>${description}</p>` : ''}
-    `.trim();
+  private static formatYouTubeDescription(description: string, videoId: string): string {
+    if (!description) return '';
+
+    // Escape HTML to prevent XSS but preserve text formatting
+    let formatted = description
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    // Convert URLs to clickable links (must be done before timestamps to avoid conflicts)
+    // Match http(s):// URLs
+    formatted = formatted.replace(
+      /(https?:\/\/[^\s<]+[^\s<.,:;?!)\]]*)/gi,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: underline;">$1</a>'
+    );
+
+    // Convert timestamps (MM:SS or HH:MM:SS) to clickable links that jump to that time in the video
+    formatted = formatted.replace(
+      /\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b/g,
+      (match, hours, minutes, seconds) => {
+        let totalSeconds;
+        if (seconds !== undefined) {
+          // HH:MM:SS format
+          totalSeconds = parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseInt(seconds);
+        } else {
+          // MM:SS format
+          totalSeconds = parseInt(hours) * 60 + parseInt(minutes);
+        }
+        return `<a href="https://www.youtube.com/watch?v=${videoId}&t=${totalSeconds}s" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: none; font-weight: 500;">${match}</a>`;
+      }
+    );
+
+    // Convert line breaks to <br> tags
+    formatted = formatted.replace(/\n/g, '<br>');
+
+    return `<div class="youtube-description" style="margin-top: 1rem; line-height: 1.6; color: #9ca3af; font-size: 0.875rem; white-space: pre-wrap; word-wrap: break-word;">${formatted}</div>`;
+  }
+
+  /**
+   * Create YouTube embed HTML
+   * Uses portrait mode (9:16) for Shorts, landscape mode (16:9) for regular videos
+   */
+  private static createYouTubeEmbed(videoId: string, description?: string, isShort: boolean = false): string {
+    const formattedDescription = description ? this.formatYouTubeDescription(description, videoId) : '';
+
+    // For Shorts: use fixed height approach to fit in modal (max 70vh)
+    // For regular videos: use aspect ratio padding (16:9 = 56.25%)
+    if (isShort) {
+      return `
+        <div class="youtube-embed youtube-short" style="position: relative; width: 100%; max-width: 400px; height: 70vh; max-height: 700px; margin: 1rem auto; overflow: hidden;">
+          <iframe
+            src="https://www.youtube.com/embed/${videoId}"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+        ${formattedDescription}
+      `.trim();
+    } else {
+      return `
+        <div class="youtube-embed" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 1rem 0;">
+          <iframe
+            src="https://www.youtube.com/embed/${videoId}"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+        ${formattedDescription}
+      `.trim();
+    }
   }
 
   /**
@@ -798,7 +862,9 @@ export class FeedService {
               description = item.description;
             }
 
-            content = this.createYouTubeEmbed(videoId, description);
+            // Detect if this is a Short to use portrait mode
+            const isShort = this.isYouTubeShort(item.link);
+            content = this.createYouTubeEmbed(videoId, description, isShort);
           }
         }
 
