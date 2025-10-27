@@ -92,14 +92,14 @@ class ApiClient {
     return this.request<any[]>('/sources');
   }
 
-  async createSource(data: { name: string; url: string; type?: string; channelId?: string; category?: string }) {
+  async createSource(data: { name: string; url: string; type?: string; channelId?: string; youtubeShortsFilter?: string; category?: string }) {
     return this.request<any>('/sources', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateSource(id: string, data: { name?: string; category?: string; whitelistKeywords?: string[]; blacklistKeywords?: string[] }) {
+  async updateSource(id: string, data: { name?: string; category?: string; youtubeShortsFilter?: string; whitelistKeywords?: string[]; blacklistKeywords?: string[] }) {
     return this.request<any>(`/sources/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

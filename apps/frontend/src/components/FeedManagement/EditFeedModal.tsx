@@ -126,6 +126,24 @@ const HelpText = styled.p`
   color: ${props => props.theme.colors.textSecondary};
 `;
 
+const Select = styled.select`
+  padding: ${props => props.theme.spacing[3]};
+  background: ${props => props.theme.colors.background};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.base};
+  color: ${props => props.theme.colors.text};
+  font-size: ${props => props.theme.fontSizes.base};
+  font-family: ${props => props.theme.fonts.sans};
+  transition: all ${props => props.theme.transitions.fast};
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+    box-shadow: 0 0 0 3px ${props => props.theme.colors.primary}22;
+  }
+`;
+
 const SectionTitle = styled.h3`
   margin: 0;
   font-size: ${props => props.theme.fontSizes.base};
@@ -184,6 +202,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
 export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, onClose }) => {
   const { updateSource } = useFeedSourceStore();
   const [name, setName] = useState('');
+  const [youtubeShortsFilter, setYoutubeShortsFilter] = useState<'all' | 'exclude' | 'only'>('all');
   const [whitelistKeywords, setWhitelistKeywords] = useState<string[]>([]);
   const [blacklistKeywords, setBlacklistKeywords] = useState<string[]>([]);
 
@@ -191,6 +210,7 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
   useEffect(() => {
     if (source) {
       setName(source.name);
+      setYoutubeShortsFilter(source.youtubeShortsFilter || 'all');
       setWhitelistKeywords(source.whitelistKeywords || []);
       setBlacklistKeywords(source.blacklistKeywords || []);
     }
@@ -199,11 +219,18 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
   const handleSubmit = () => {
     if (!source || !name.trim()) return;
 
-    updateSource(source.id, {
+    const updates: any = {
       name: name.trim(),
       whitelistKeywords: whitelistKeywords,
       blacklistKeywords: blacklistKeywords,
-    });
+    };
+
+    // Only include youtubeShortsFilter for YouTube sources
+    if (source.type === 'youtube') {
+      updates.youtubeShortsFilter = youtubeShortsFilter;
+    }
+
+    updateSource(source.id, updates);
 
     handleClose();
   };
@@ -277,6 +304,22 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
                   required
                 />
               </FormGroup>
+
+              {source.type === 'youtube' && (
+                <FormGroup>
+                  <Label htmlFor="shorts-filter-edit">Shorts Filter</Label>
+                  <Select
+                    id="shorts-filter-edit"
+                    value={youtubeShortsFilter}
+                    onChange={e => setYoutubeShortsFilter(e.target.value as 'all' | 'exclude' | 'only')}
+                  >
+                    <option value="all">Show All (Videos + Shorts)</option>
+                    <option value="exclude">Exclude Shorts</option>
+                    <option value="only">Shorts Only</option>
+                  </Select>
+                  <HelpText>Choose whether to include, exclude, or only show YouTube Shorts</HelpText>
+                </FormGroup>
+              )}
 
               <FormGroup>
                 <SectionTitle>Filters</SectionTitle>

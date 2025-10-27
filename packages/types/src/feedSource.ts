@@ -1,6 +1,7 @@
 // Feed Source types for managing RSS feeds and other content sources
 
 export type SourceType = 'rss' | 'youtube' | 'reddit';
+export type YoutubeShortsFilter = 'all' | 'exclude' | 'only';
 
 export interface FeedSource {
   id: string; // UUID
@@ -12,6 +13,7 @@ export interface FeedSource {
   // Type-specific identifiers
   channelId?: string; // YouTube channel ID (e.g., UCsBjURrPoezykLs9EqgamOA)
   subreddit?: string; // Reddit subreddit name (e.g., programming)
+  youtubeShortsFilter?: YoutubeShortsFilter; // YouTube shorts filtering
 
   // Filtering
   whitelistKeywords?: string[]; // Only show content matching these keywords

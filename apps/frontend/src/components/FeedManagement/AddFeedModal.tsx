@@ -176,6 +176,7 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
   const [subreddit, setSubreddit] = useState('');
+  const [youtubeShortsFilter, setYoutubeShortsFilter] = useState<'all' | 'exclude' | 'only'>('all');
   const [whitelistKeywords, setWhitelistKeywords] = useState<string[]>([]);
   const [blacklistKeywords, setBlacklistKeywords] = useState<string[]>([]);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
@@ -218,6 +219,7 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
     } else if (sourceType === 'youtube') {
       input.name = name.trim() || 'YouTube Channel';
       input.url = url.trim();
+      input.youtubeShortsFilter = youtubeShortsFilter;
       // Extract channel ID from URL (mock implementation)
       const channelIdMatch = url.match(/(@[\w-]+|channel\/([\w-]+)|\/c\/([\w-]+))/);
       if (channelIdMatch) {
@@ -238,6 +240,7 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
     setUrl('');
     setName('');
     setSubreddit('');
+    setYoutubeShortsFilter('all');
     setWhitelistKeywords([]);
     setBlacklistKeywords([]);
     setIsFilterExpanded(false);
@@ -250,6 +253,7 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
     setUrl('');
     setName('');
     setSubreddit('');
+    setYoutubeShortsFilter('all');
   };
 
   // Check if form is valid for submission
@@ -292,7 +296,14 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
               )}
 
               {sourceType === 'youtube' && (
-                <YouTubeChannelForm url={url} name={name} onUrlChange={setUrl} onNameChange={setName} />
+                <YouTubeChannelForm
+                  url={url}
+                  name={name}
+                  shortsFilter={youtubeShortsFilter}
+                  onUrlChange={setUrl}
+                  onNameChange={setName}
+                  onShortsFilterChange={setYoutubeShortsFilter}
+                />
               )}
 
               {sourceType === 'reddit' && (

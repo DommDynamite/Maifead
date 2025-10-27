@@ -23,6 +23,7 @@ export class SourcesController {
         url: s.url,
         type: s.type || 'rss',
         channelId: s.channel_id,
+        youtubeShortsFilter: s.youtube_shorts_filter || 'all',
         iconUrl: s.icon_url,
         description: s.description,
         category: s.category,
@@ -45,7 +46,7 @@ export class SourcesController {
   static async create(req: Request<{}, {}, CreateSourceRequest>, res: Response) {
     try {
       const userId = (req as any).userId;
-      const { name, url, type, channelId, category, whitelistKeywords, blacklistKeywords } = req.body;
+      const { name, url, type, channelId, youtubeShortsFilter, category, whitelistKeywords, blacklistKeywords } = req.body;
 
       if (!name || !url) {
         return res.status(400).json({ error: 'Name and URL are required' });
@@ -113,8 +114,8 @@ export class SourcesController {
         : null;
 
       db.prepare(`
-        INSERT INTO sources (id, user_id, name, url, type, channel_id, category, icon_url, whitelist_keywords, blacklist_keywords, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO sources (id, user_id, name, url, type, channel_id, youtube_shorts_filter, category, icon_url, whitelist_keywords, blacklist_keywords, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         sourceId,
         userId,
@@ -122,6 +123,7 @@ export class SourcesController {
         feedUrl, // Store the RSS feed URL, not the original YouTube URL
         sourceType,
         extractedChannelId || null,
+        youtubeShortsFilter || 'all',
         category || null,
         iconUrl || null,
         whitelistJson,
@@ -140,6 +142,7 @@ export class SourcesController {
         url: source.url,
         type: source.type || 'rss',
         channelId: source.channel_id,
+        youtubeShortsFilter: source.youtube_shorts_filter || 'all',
         iconUrl: source.icon_url,
         description: source.description,
         category: source.category,
@@ -156,6 +159,7 @@ export class SourcesController {
         url: source.url,
         type: source.type || 'rss',
         channelId: source.channel_id,
+        youtubeShortsFilter: source.youtube_shorts_filter || 'all',
         iconUrl: source.icon_url,
         description: source.description,
         category: source.category,
@@ -179,7 +183,7 @@ export class SourcesController {
     try {
       const userId = (req as any).userId;
       const { id } = req.params;
-      const { name, category, fetchInterval, whitelistKeywords, blacklistKeywords } = req.body;
+      const { name, category, fetchInterval, youtubeShortsFilter, whitelistKeywords, blacklistKeywords } = req.body;
 
       // Verify ownership
       const source = db.prepare('SELECT * FROM sources WHERE id = ? AND user_id = ?')
@@ -204,6 +208,10 @@ export class SourcesController {
       if (fetchInterval) {
         updates.push('fetch_interval = ?');
         values.push(fetchInterval);
+      }
+      if (youtubeShortsFilter !== undefined) {
+        updates.push('youtube_shorts_filter = ?');
+        values.push(youtubeShortsFilter);
       }
       if (whitelistKeywords !== undefined) {
         updates.push('whitelist_keywords = ?');
@@ -234,6 +242,7 @@ export class SourcesController {
         url: updated.url,
         type: updated.type || 'rss',
         channelId: updated.channel_id,
+        youtubeShortsFilter: updated.youtube_shorts_filter || 'all',
         iconUrl: updated.icon_url,
         description: updated.description,
         category: updated.category,
@@ -298,6 +307,7 @@ export class SourcesController {
         url: sourceRow.url,
         type: sourceRow.type || 'rss',
         channelId: sourceRow.channel_id,
+        youtubeShortsFilter: sourceRow.youtube_shorts_filter || 'all',
         iconUrl: sourceRow.icon_url,
         description: sourceRow.description,
         category: sourceRow.category,

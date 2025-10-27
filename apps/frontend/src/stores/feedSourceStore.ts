@@ -52,6 +52,7 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
         url: input.url,
         type: input.type,
         channelId: input.channelId,
+        youtubeShortsFilter: input.youtubeShortsFilter,
         category: input.category,
       });
 
@@ -86,6 +87,7 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
       const updated = await api.updateSource(id, {
         name: updates.name,
         category: updates.category,
+        youtubeShortsFilter: updates.youtubeShortsFilter,
         whitelistKeywords: updates.whitelistKeywords,
         blacklistKeywords: updates.blacklistKeywords,
       });

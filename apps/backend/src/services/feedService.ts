@@ -206,6 +206,18 @@ export class FeedService {
   }
 
   /**
+   * Check if a YouTube URL is a short
+   */
+  private static isYouTubeShort(url: string): boolean {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.pathname.startsWith('/shorts/');
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
    * Extract video ID from YouTube URL
    */
   private static extractYouTubeVideoId(url: string): string | null {
@@ -266,6 +278,16 @@ export class FeedService {
           .get(item.link, source.id);
 
         if (existing) continue;
+
+        // Apply YouTube shorts filter if this is a YouTube source
+        if (source.type === 'youtube' && item.link) {
+          const isShort = this.isYouTubeShort(item.link);
+          const shortsFilter = (source as any).youtubeShortsFilter || 'all';
+
+          // Skip if filter doesn't match
+          if (shortsFilter === 'exclude' && isShort) continue;
+          if (shortsFilter === 'only' && !isShort) continue;
+        }
 
         // Extract image URL from various possible locations
         const imageUrl = this.extractImageUrl(item);
@@ -503,6 +525,7 @@ export class FeedService {
       url: row.url,
       type: row.type || 'rss',
       channelId: row.channel_id,
+      youtubeShortsFilter: row.youtube_shorts_filter || 'all',
       iconUrl: row.icon_url,
       description: row.description,
       category: row.category,

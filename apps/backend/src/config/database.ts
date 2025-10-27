@@ -88,6 +88,13 @@ export const initializeDatabase = () => {
     // Column already exists, ignore error
   }
 
+  // Add YouTube shorts filter column
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN youtube_shorts_filter TEXT DEFAULT 'all'`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
   // Feed items table
   db.exec(`
     CREATE TABLE IF NOT EXISTS feed_items (

@@ -4,8 +4,10 @@ import styled from 'styled-components';
 interface YouTubeChannelFormProps {
   url: string;
   name: string;
+  shortsFilter: 'all' | 'exclude' | 'only';
   onUrlChange: (url: string) => void;
   onNameChange: (name: string) => void;
+  onShortsFilterChange: (filter: 'all' | 'exclude' | 'only') => void;
 }
 
 const FormGroup = styled.div`
@@ -66,11 +68,31 @@ const ExampleList = styled.ul`
   }
 `;
 
+const Select = styled.select`
+  padding: ${props => props.theme.spacing[3]};
+  background: ${props => props.theme.colors.background};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.base};
+  color: ${props => props.theme.colors.text};
+  font-size: ${props => props.theme.fontSizes.base};
+  font-family: ${props => props.theme.fonts.sans};
+  transition: all ${props => props.theme.transitions.fast};
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+    box-shadow: 0 0 0 3px ${props => props.theme.colors.primary}22;
+  }
+`;
+
 export const YouTubeChannelForm: React.FC<YouTubeChannelFormProps> = ({
   url,
   name,
+  shortsFilter,
   onUrlChange,
   onNameChange,
+  onShortsFilterChange,
 }) => {
   return (
     <>
@@ -108,6 +130,20 @@ export const YouTubeChannelForm: React.FC<YouTubeChannelFormProps> = ({
           placeholder="e.g., Fireship"
         />
         <HelpText>Leave empty to auto-detect from channel</HelpText>
+      </FormGroup>
+
+      <FormGroup>
+        <Label htmlFor="shorts-filter">Shorts Filter</Label>
+        <Select
+          id="shorts-filter"
+          value={shortsFilter}
+          onChange={e => onShortsFilterChange(e.target.value as 'all' | 'exclude' | 'only')}
+        >
+          <option value="all">Show All (Videos + Shorts)</option>
+          <option value="exclude">Exclude Shorts</option>
+          <option value="only">Shorts Only</option>
+        </Select>
+        <HelpText>Choose whether to include, exclude, or only show YouTube Shorts</HelpText>
       </FormGroup>
     </>
   );

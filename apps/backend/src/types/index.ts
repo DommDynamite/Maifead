@@ -17,6 +17,7 @@ export interface UserPreferences {
 }
 
 export type SourceType = 'rss' | 'youtube' | 'reddit';
+export type YoutubeShortsFilter = 'all' | 'exclude' | 'only';
 
 export interface Source {
   id: string;
@@ -25,6 +26,7 @@ export interface Source {
   url: string;
   type: SourceType;
   channelId?: string; // YouTube channel ID
+  youtubeShortsFilter?: YoutubeShortsFilter; // YouTube shorts filtering
   iconUrl?: string;
   description?: string;
   category?: string;
@@ -90,6 +92,7 @@ export interface CreateSourceRequest {
   url: string;
   type?: SourceType;
   channelId?: string;
+  youtubeShortsFilter?: YoutubeShortsFilter;
   category?: string;
   whitelistKeywords?: string[];
   blacklistKeywords?: string[];
@@ -99,6 +102,7 @@ export interface UpdateSourceRequest {
   name?: string;
   category?: string;
   fetchInterval?: number;
+  youtubeShortsFilter?: YoutubeShortsFilter;
   whitelistKeywords?: string[];
   blacklistKeywords?: string[];
 }
