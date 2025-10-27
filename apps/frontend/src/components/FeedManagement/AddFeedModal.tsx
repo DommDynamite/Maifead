@@ -6,9 +6,9 @@ import { FilterConfig } from './FilterConfig';
 import { SourceTypeSelector } from './SourceTypeSelector';
 import { RSSFeedForm } from './RSSFeedForm';
 import { YouTubeChannelForm } from './YouTubeChannelForm';
-import { RedditSubredditForm } from './RedditSubredditForm';
+import { RedditSourceForm } from './RedditSourceForm';
 import { useFeedSourceStore } from '../../stores/feedSourceStore';
-import type { FeedSourceInput, SourceType } from '@maifead/types';
+import type { FeedSourceInput, SourceType, RedditSourceType } from '@maifead/types';
 
 interface AddFeedModalProps {
   isOpen: boolean;
@@ -175,7 +175,7 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
   const [sourceType, setSourceType] = useState<SourceType>('rss');
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
-  const [subreddit, setSubreddit] = useState('');
+  const [redditSourceType, setRedditSourceType] = useState<RedditSourceType>('subreddit');
   const [youtubeShortsFilter, setYoutubeShortsFilter] = useState<'all' | 'exclude' | 'only'>('all');
   const [whitelistKeywords, setWhitelistKeywords] = useState<string[]>([]);
   const [blacklistKeywords, setBlacklistKeywords] = useState<string[]>([]);
@@ -184,8 +184,8 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
   const handleSubmit = () => {
     // Validation based on source type
     if (sourceType === 'reddit') {
-      if (!subreddit.trim()) {
-        alert('Please enter a subreddit name');
+      if (!url.trim()) {
+        alert(`Please enter a ${redditSourceType === 'subreddit' ? 'subreddit name' : 'username'}`);
         return;
       }
     } else {
@@ -226,9 +226,18 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
         input.channelId = channelIdMatch[0];
       }
     } else if (sourceType === 'reddit') {
-      input.name = name.trim() || `r/${subreddit}`;
-      input.url = `https://www.reddit.com/r/${subreddit}`;
-      input.subreddit = subreddit.trim();
+      const identifier = url.trim();
+      if (redditSourceType === 'subreddit') {
+        input.name = name.trim() || `r/${identifier}`;
+        input.url = identifier.startsWith('http') ? identifier : `https://www.reddit.com/r/${identifier}`;
+        input.subreddit = identifier;
+        input.redditSourceType = 'subreddit';
+      } else {
+        input.name = name.trim() || `u/${identifier}`;
+        input.url = identifier.startsWith('http') ? identifier : `https://www.reddit.com/user/${identifier}`;
+        input.redditUsername = identifier;
+        input.redditSourceType = 'user';
+      }
     }
 
     createSource(input);
@@ -239,7 +248,7 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
     setSourceType('rss');
     setUrl('');
     setName('');
-    setSubreddit('');
+    setRedditSourceType('subreddit');
     setYoutubeShortsFilter('all');
     setWhitelistKeywords([]);
     setBlacklistKeywords([]);
@@ -252,15 +261,12 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
     // Clear form when type changes
     setUrl('');
     setName('');
-    setSubreddit('');
+    setRedditSourceType('subreddit');
     setYoutubeShortsFilter('all');
   };
 
   // Check if form is valid for submission
   const isFormValid = () => {
-    if (sourceType === 'reddit') {
-      return subreddit.trim().length > 0;
-    }
     return url.trim().length > 0;
   };
 
@@ -307,11 +313,13 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
               )}
 
               {sourceType === 'reddit' && (
-                <RedditSubredditForm
-                  subreddit={subreddit}
+                <RedditSourceForm
+                  url={url}
                   name={name}
-                  onSubredditChange={setSubreddit}
+                  sourceType={redditSourceType}
+                  onUrlChange={setUrl}
                   onNameChange={setName}
+                  onSourceTypeChange={setRedditSourceType}
                 />
               )}
 

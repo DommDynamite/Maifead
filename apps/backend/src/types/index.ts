@@ -18,6 +18,7 @@ export interface UserPreferences {
 
 export type SourceType = 'rss' | 'youtube' | 'reddit';
 export type YoutubeShortsFilter = 'all' | 'exclude' | 'only';
+export type RedditSourceType = 'subreddit' | 'user';
 
 export interface Source {
   id: string;
@@ -26,6 +27,9 @@ export interface Source {
   url: string;
   type: SourceType;
   channelId?: string; // YouTube channel ID
+  subreddit?: string; // Reddit subreddit name
+  redditUsername?: string; // Reddit username
+  redditSourceType?: RedditSourceType; // Whether Reddit source is subreddit or user
   youtubeShortsFilter?: YoutubeShortsFilter; // YouTube shorts filtering
   iconUrl?: string;
   description?: string;
@@ -92,6 +96,9 @@ export interface CreateSourceRequest {
   url: string;
   type?: SourceType;
   channelId?: string;
+  subreddit?: string;
+  redditUsername?: string;
+  redditSourceType?: RedditSourceType;
   youtubeShortsFilter?: YoutubeShortsFilter;
   category?: string;
   whitelistKeywords?: string[];

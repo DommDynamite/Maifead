@@ -170,6 +170,152 @@ export class FeedService {
   }
 
   /**
+   * Extract Reddit identifier from various URL formats
+   * Supports:
+   * - https://www.reddit.com/r/subreddit
+   * - https://www.reddit.com/user/username
+   * - reddit.com/r/subreddit
+   * - Just the subreddit or username directly
+   */
+  static extractRedditIdentifier(input: string): { type: 'subreddit' | 'user'; value: string } | null {
+    try {
+      // Try to parse as URL first
+      let urlStr = input.trim();
+      if (!urlStr.startsWith('http')) {
+        urlStr = `https://${urlStr}`;
+      }
+
+      const urlObj = new URL(urlStr);
+
+      // Handle /r/subreddit format
+      const subredditMatch = urlObj.pathname.match(/^\/r\/([\w-]+)/);
+      if (subredditMatch) {
+        return { type: 'subreddit', value: subredditMatch[1] };
+      }
+
+      // Handle /user/username format
+      const userMatch = urlObj.pathname.match(/^\/user\/([\w-]+)/);
+      if (userMatch) {
+        return { type: 'user', value: userMatch[1] };
+      }
+
+      return null;
+    } catch (error) {
+      // If URL parsing fails, check if it's a direct subreddit/username
+      const trimmed = input.trim().replace(/^\/?(r\/|user\/)/, '');
+      if (trimmed && /^[\w-]+$/.test(trimmed)) {
+        // Assume it's a subreddit if no prefix specified
+        return { type: 'subreddit', value: trimmed };
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Convert Reddit subreddit to RSS feed URL
+   */
+  static convertRedditSubredditToRss(subreddit: string): string {
+    return `https://www.reddit.com/r/${subreddit}.rss`;
+  }
+
+  /**
+   * Convert Reddit user to RSS feed URL
+   */
+  static convertRedditUserToRss(username: string): string {
+    return `https://www.reddit.com/user/${username}/submitted.rss`;
+  }
+
+  /**
+   * Fetch subreddit icon from Reddit's JSON API using browser-like headers
+   */
+  static async getRedditSubredditIcon(subreddit: string): Promise<string | null> {
+    try {
+      const response = await fetch(`https://www.reddit.com/r/${subreddit}/about.json`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.9'
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`Failed to fetch subreddit info: ${response.status}`);
+        return null;
+      }
+
+      const data = await response.json() as any;
+      const subredditData = data?.data;
+
+      if (!subredditData) {
+        return null;
+      }
+
+      // Try community_icon first (this is usually the best quality)
+      if (subredditData.community_icon) {
+        // The community_icon is HTML encoded, need to decode &amp; to &
+        return subredditData.community_icon.replace(/&amp;/g, '&');
+      }
+
+      // Fallback to icon_img
+      if (subredditData.icon_img) {
+        return subredditData.icon_img.replace(/&amp;/g, '&');
+      }
+
+      // Fallback to header_img (older subreddits might only have this)
+      if (subredditData.header_img) {
+        return subredditData.header_img.replace(/&amp;/g, '&');
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Error fetching Reddit subreddit icon for r/${subreddit}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch Reddit user icon from Reddit's JSON API using browser-like headers
+   */
+  static async getRedditUserIcon(username: string): Promise<string | null> {
+    try {
+      const response = await fetch(`https://www.reddit.com/user/${username}/about.json`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.9'
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`Failed to fetch user info: ${response.status}`);
+        return null;
+      }
+
+      const data = await response.json() as any;
+      const userData = data?.data;
+
+      if (!userData) {
+        return null;
+      }
+
+      // Try icon_img first (user avatar)
+      if (userData.icon_img) {
+        return userData.icon_img.replace(/&amp;/g, '&');
+      }
+
+      // Fallback to snoovatar_img (Reddit's custom avatar system)
+      if (userData.snoovatar_img) {
+        return userData.snoovatar_img.replace(/&amp;/g, '&');
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Error fetching Reddit user icon for u/${username}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * Fetch and parse an RSS feed from a URL
    */
   static async fetchFeed(url: string) {
@@ -265,6 +411,372 @@ export class FeedService {
   }
 
   /**
+   * Extract Reddit video URL from content HTML
+   */
+  private static extractRedditVideoUrl(html: string): string | null {
+    // Look for v.redd.it URLs in anchor tags or direct video sources
+    const redditVideoMatch = html.match(/https?:\/\/v\.redd\.it\/[a-zA-Z0-9]+/);
+    if (redditVideoMatch) {
+      return redditVideoMatch[0];
+    }
+
+    // Look for preview.redd.it video URLs
+    const previewVideoMatch = html.match(/https?:\/\/preview\.redd\.it\/[^"'\s]+\.mp4/);
+    if (previewVideoMatch) {
+      return previewVideoMatch[0];
+    }
+
+    // Look for video sources in video tags
+    const videoSrcMatch = html.match(/<video[^>]*src="([^"]+)"/);
+    if (videoSrcMatch) {
+      return videoSrcMatch[1];
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract Redgifs URL from content HTML
+   */
+  private static extractRedgifsUrl(html: string): string | null {
+    // Look for redgifs.com URLs in anchor tags
+    const redgifsMatch = html.match(/https?:\/\/(?:www\.)?redgifs\.com\/watch\/([a-zA-Z0-9-_]+)/i);
+    if (redgifsMatch) {
+      return redgifsMatch[0];
+    }
+
+    // Also check for i.redgifs.com direct media URLs
+    const directMatch = html.match(/https?:\/\/i\.redgifs\.com\/[^"'\s]+/);
+    if (directMatch) {
+      return directMatch[0];
+    }
+
+    return null;
+  }
+
+  /**
+   * Fetch Redgifs video MP4 URL from the watch page
+   */
+  private static async fetchRedgifsVideoUrl(watchUrl: string): Promise<string | null> {
+    try {
+      // Extract the video ID from the watch URL
+      const idMatch = watchUrl.match(/\/watch\/([a-zA-Z0-9-_]+)/i);
+      if (!idMatch) {
+        return null;
+      }
+
+      const videoId = idMatch[1];
+
+      // Fetch the Redgifs API endpoint to get video data
+      // Redgifs has a public API at https://api.redgifs.com/v2/gifs/{id}
+      const response = await fetch(`https://api.redgifs.com/v2/gifs/${videoId}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`Failed to fetch Redgifs data: ${response.status}`);
+        return null;
+      }
+
+      const data = await response.json() as any;
+
+      // The API returns video URLs in the gif.urls object
+      // Priority: HD > SD > Mobile
+      const urls = data?.gif?.urls;
+      if (!urls) {
+        return null;
+      }
+
+      // Try to get the best quality video URL
+      if (urls.hd) {
+        return urls.hd;
+      } else if (urls.sd) {
+        return urls.sd;
+      } else if (urls.mobile) {
+        return urls.mobile;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching Redgifs video URL:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Create Redgifs video embed HTML
+   */
+  private static createRedgifsEmbed(videoUrl: string): string {
+    return `
+      <div class="redgifs-video" style="margin: 1rem 0;">
+        <video
+          controls
+          loop
+          preload="metadata"
+          style="width: 100%; max-width: 100%; height: auto; border-radius: 8px; background: #000;"
+        >
+          <source src="${videoUrl}" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    `.trim();
+  }
+
+  /**
+   * Create Reddit video embed HTML
+   */
+  private static createRedditVideoEmbed(videoUrl: string, content: string): string {
+    // Reddit videos on v.redd.it need to be accessed with /DASH_720.mp4 or similar for direct playback
+    let playbackUrl = videoUrl;
+
+    // If it's a v.redd.it URL without a quality suffix, try common resolutions
+    if (videoUrl.includes('v.redd.it') && !videoUrl.includes('DASH_')) {
+      // Try to find the actual video URL in the content
+      const dashMatch = content.match(/https?:\/\/v\.redd\.it\/[a-zA-Z0-9]+\/DASH_[0-9]+\.mp4/);
+      if (dashMatch) {
+        playbackUrl = dashMatch[0];
+      } else {
+        // Default to trying 720p
+        playbackUrl = `${videoUrl}/DASH_720.mp4`;
+      }
+    }
+
+    return `
+      <div class="reddit-video" style="margin: 1rem 0;">
+        <video
+          controls
+          preload="metadata"
+          style="width: 100%; max-width: 100%; height: auto; border-radius: 8px; background: #000;"
+        >
+          <source src="${playbackUrl}" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    `.trim();
+  }
+
+  /**
+   * Fetch Reddit gallery images using the JSON API
+   * Returns array of full-resolution image URLs
+   * Uses Reddit's public JSON API by appending .json to the URL
+   */
+  private static async fetchRedditGalleryImages(postLink: string): Promise<string[]> {
+    try {
+      // Convert gallery URL to JSON API URL
+      // https://www.reddit.com/gallery/xxxxx -> https://www.reddit.com/gallery/xxxxx.json
+      const jsonUrl = postLink.endsWith('/') ? `${postLink.slice(0, -1)}.json` : `${postLink}.json`;
+
+      const response = await fetch(jsonUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`Failed to fetch Reddit JSON API: ${response.status}`);
+        return [];
+      }
+
+      const jsonData = await response.json() as any;
+      const images: string[] = [];
+      const seenUrls = new Set<string>();
+
+      // Navigate the JSON API response structure
+      // Structure: [0].data.children[0].data.media_metadata or gallery_data
+      const postData = jsonData?.[0]?.data?.children?.[0]?.data;
+
+      if (!postData) {
+        console.log(`No post data found in JSON API response for: ${postLink}`);
+        return [];
+      }
+
+      // Check if this is a gallery post
+      const gallery = postData.gallery_data;
+      const mediaMetadata = postData.media_metadata;
+
+      if (gallery?.items && mediaMetadata) {
+        console.log(`[DEBUG] Found gallery with ${gallery.items.length} items`);
+
+        for (const item of gallery.items) {
+          const mediaId = item.media_id;
+          const media = mediaMetadata[mediaId];
+
+          if (!media) continue;
+
+          // Get the highest resolution image URL
+          // Structure: media.s.u (unobfuscated URL) or media.s.gif/mp4 for animated content
+          let imageUrl: string | null = null;
+
+          if (media.s?.u) {
+            imageUrl = media.s.u;
+          } else if (media.s?.gif) {
+            imageUrl = media.s.gif; // Animated GIF URL
+          } else if (media.s?.mp4) {
+            imageUrl = media.s.mp4; // Animated MP4 URL
+          }
+
+          if (imageUrl) {
+            // Decode HTML entities
+            imageUrl = imageUrl.replace(/&amp;/g, '&');
+
+            // Upgrade preview.redd.it to i.redd.it for full resolution
+            if (imageUrl.includes('preview.redd.it')) {
+              imageUrl = imageUrl.replace('preview.redd.it', 'i.redd.it');
+            }
+
+            const cleanUrl = imageUrl.split('?')[0];
+            if (!seenUrls.has(cleanUrl)) {
+              seenUrls.add(cleanUrl);
+              images.push(cleanUrl);
+            }
+          }
+        }
+
+        if (images.length > 0) {
+          console.log(`Extracted ${images.length} gallery images from JSON API`);
+          return images;
+        }
+      }
+
+      // If not a gallery, check if it's a single image post
+      if (postData.url && (postData.url.includes('i.redd.it') || postData.url.includes('preview.redd.it'))) {
+        let imageUrl = postData.url.replace(/&amp;/g, '&');
+        if (imageUrl.includes('preview.redd.it')) {
+          imageUrl = imageUrl.replace('preview.redd.it', 'i.redd.it');
+        }
+        const cleanUrl = imageUrl.split('?')[0];
+        if (/\.(jpg|jpeg|png|gif|webp)$/i.test(cleanUrl)) {
+          images.push(cleanUrl);
+          console.log(`Extracted single image from JSON API`);
+          return images;
+        }
+      }
+
+      console.log(`No gallery images found in JSON API for: ${postLink}`);
+      return images;
+    } catch (error) {
+      console.error('Error fetching Reddit gallery images from JSON API:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Extract and upgrade Reddit image URLs to high resolution
+   */
+  private static async extractRedditImages(html: string, postLink?: string): Promise<string[]> {
+    const images: string[] = [];
+    const seenUrls = new Set<string>();
+
+    // FIRST: Check if this is a gallery post and fetch images from the gallery link
+    if (html.includes('/gallery/')) {
+      // Extract the gallery link from the HTML content (www. is optional)
+      const galleryLinkMatch = html.match(/href="(https:\/\/(?:www\.)?reddit\.com\/gallery\/[a-zA-Z0-9]+)"/);
+      const galleryLink = galleryLinkMatch ? galleryLinkMatch[1] : postLink;
+
+      if (galleryLink) {
+        const galleryImages = await this.fetchRedditGalleryImages(galleryLink);
+        if (galleryImages.length > 0) {
+          return galleryImages; // Return gallery images directly
+        }
+      }
+    }
+
+    // SECOND: Match href attributes in anchor tags (Reddit wraps images in links to full-res versions)
+    const hrefRegex = /<a[^>]+href="([^"]+)"[^>]*>/gi;
+    let match;
+
+    while ((match = hrefRegex.exec(html)) !== null) {
+      let imageUrl = match[1];
+
+      // Decode HTML entities
+      imageUrl = imageUrl.replace(/&amp;/g, '&');
+
+      // Look for i.redd.it URLs in hrefs (these are full resolution direct links to images)
+      if (imageUrl.includes('i.redd.it') && /\.(jpg|jpeg|png|gif|webp)$/i.test(imageUrl)) {
+        const cleanUrl = imageUrl.split('?')[0]; // Remove query params
+        if (!seenUrls.has(cleanUrl)) {
+          seenUrls.add(cleanUrl);
+          images.push(cleanUrl);
+        }
+      }
+    }
+
+    // THIRD: Fallback to img src tags if no href images found
+    const imgRegex = /<img[^>]+src="([^"]+)"[^>]*>/gi;
+
+    while ((match = imgRegex.exec(html)) !== null) {
+      let imageUrl = match[1];
+
+      // Decode HTML entities
+      imageUrl = imageUrl.replace(/&amp;/g, '&');
+
+      // Skip external preview thumbnails (very low quality)
+      if (imageUrl.includes('external-preview.redd.it')) continue;
+
+      // Handle thumbs.redditmedia.com - try to upgrade to i.redd.it
+      // thumbs URLs look like: https://b.thumbs.redditmedia.com/HASH.jpg
+      // We can't reliably convert these, so skip them for now
+      if (imageUrl.includes('thumbs.redditmedia.com')) continue;
+
+      // Upgrade preview.redd.it URLs to i.redd.it for full resolution
+      if (imageUrl.includes('preview.redd.it')) {
+        imageUrl = imageUrl.split('?')[0]; // Remove query params
+        imageUrl = imageUrl.replace('preview.redd.it', 'i.redd.it');
+      }
+
+      // Only include Reddit-hosted images we haven't seen yet
+      if (imageUrl.includes('i.redd.it')) {
+        const cleanUrl = imageUrl.split('?')[0];
+        if (!seenUrls.has(cleanUrl)) {
+          seenUrls.add(cleanUrl);
+          images.push(cleanUrl);
+        }
+      }
+    }
+
+    return images;
+  }
+
+  /**
+   * Process Reddit content to improve image quality and display
+   */
+  private static async processRedditImages(html: string, postLink?: string): Promise<string> {
+    try {
+      const images = await this.extractRedditImages(html, postLink);
+
+      // Ensure images is an array
+      if (!Array.isArray(images) || images.length === 0) {
+        return html;
+      }
+
+      // Remove all existing img tags and their wrapper links
+      let processed = html.replace(/<a[^>]*>\s*<img[^>]*>\s*<\/a>/gi, '');
+      processed = processed.replace(/<img[^>]*>/gi, '');
+
+      // Create clean image gallery with high-res images
+      const imageElements = images.map((url: string) =>
+        `<img src="${url}" style="width: 100%; height: auto; border-radius: 8px; margin: 0.5rem 0;" />`
+      ).join('\n');
+
+      const gallery = `
+        <div class="reddit-gallery" style="margin: 1rem 0;">
+          ${imageElements}
+        </div>
+      `.trim();
+
+      // Prepend gallery to content
+      return gallery + '\n' + processed;
+    } catch (error) {
+      console.error('Error processing Reddit images:', error);
+      return html; // Return original HTML on error
+    }
+  }
+
+  /**
    * Fetch and store feed items for a specific source
    */
   static async fetchAndStoreItems(source: Source): Promise<number> {
@@ -306,7 +818,12 @@ export class FeedService {
             const mediaDesc = item.mediaGroup?.['media:description'];
             if (mediaDesc) {
               if (Array.isArray(mediaDesc)) {
-                description = mediaDesc[0]?._ || mediaDesc[0] || '';
+                const firstDesc = mediaDesc[0];
+                if (typeof firstDesc === 'object' && '_' in firstDesc) {
+                  description = firstDesc._ || '';
+                } else if (typeof firstDesc === 'string') {
+                  description = firstDesc;
+                }
               } else if (typeof mediaDesc === 'string') {
                 description = mediaDesc;
               } else if (typeof mediaDesc === 'object' && '_' in mediaDesc) {
@@ -320,6 +837,46 @@ export class FeedService {
             }
 
             content = this.createYouTubeEmbed(videoId, description);
+          }
+        }
+
+        // If this is a Reddit source, process video and image content
+        if (source.type === 'reddit' && content) {
+          // FIRST: Check for Redgifs content
+          const redgifsUrl = this.extractRedgifsUrl(content);
+          if (redgifsUrl) {
+            // Handle Redgifs posts
+            const redgifsVideoUrl = await this.fetchRedgifsVideoUrl(redgifsUrl);
+            if (redgifsVideoUrl) {
+              const redgifsEmbed = this.createRedgifsEmbed(redgifsVideoUrl);
+              // Remove any anchor tags wrapping Redgifs links
+              content = content.replace(/<a[^>]*href="[^"]*redgifs\.com[^"]*"[^>]*>.*?<\/a>/gi, '');
+              content = content.replace(/<a[^>]*href="[^"]*i\.redgifs\.com[^"]*"[^>]*>.*?<\/a>/gi, '');
+              // Remove images that might be Redgifs thumbnails
+              content = content.replace(/<img[^>]*src="[^"]*redgifs\.com[^"]*"[^>]*>/gi, '');
+              content = content.replace(/<img[^>]*src="[^"]*external-preview\.redd\.it[^"]*"[^>]*>/gi, '');
+              // Prepend the Redgifs embed to the content
+              content = redgifsEmbed + '\n' + content;
+              console.log(`Embedded Redgifs video: ${redgifsUrl}`);
+            }
+          } else {
+            // SECOND: Check for Reddit native videos
+            const videoUrl = this.extractRedditVideoUrl(content);
+            if (videoUrl) {
+              // Handle video posts
+              const videoEmbed = this.createRedditVideoEmbed(videoUrl, content);
+              // Remove any anchor tags wrapping video links to prevent navigation on click
+              content = content.replace(/<a[^>]*href="[^"]*v\.redd\.it[^"]*"[^>]*>.*?<\/a>/gi, '');
+              content = content.replace(/<a[^>]*href="[^"]*preview\.redd\.it[^"]*"[^>]*>.*?<\/a>/gi, '');
+              // Remove images that are video thumbnails (usually from preview.redd.it or i.redd.it)
+              content = content.replace(/<img[^>]*src="[^"]*preview\.redd\.it[^"]*"[^>]*>/gi, '');
+              content = content.replace(/<img[^>]*src="[^"]*external-preview\.redd\.it[^"]*"[^>]*>/gi, '');
+              // Prepend the video embed to the content
+              content = videoEmbed + '\n' + content;
+            } else {
+              // THIRD: Handle image posts - upgrade to high resolution and remove link wrappers
+              content = await this.processRedditImages(content, item.link);
+            }
           }
         }
 
@@ -525,6 +1082,9 @@ export class FeedService {
       url: row.url,
       type: row.type || 'rss',
       channelId: row.channel_id,
+      subreddit: row.subreddit,
+      redditUsername: row.reddit_username,
+      redditSourceType: row.reddit_source_type,
       youtubeShortsFilter: row.youtube_shorts_filter || 'all',
       iconUrl: row.icon_url,
       description: row.description,

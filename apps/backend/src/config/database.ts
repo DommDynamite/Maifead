@@ -95,6 +95,25 @@ export const initializeDatabase = () => {
     // Column already exists, ignore error
   }
 
+  // Add Reddit-specific columns
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN subreddit TEXT`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN reddit_username TEXT`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN reddit_source_type TEXT`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
   // Feed items table
   db.exec(`
     CREATE TABLE IF NOT EXISTS feed_items (

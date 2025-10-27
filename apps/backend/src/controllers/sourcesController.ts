@@ -23,6 +23,9 @@ export class SourcesController {
         url: s.url,
         type: s.type || 'rss',
         channelId: s.channel_id,
+        subreddit: s.subreddit,
+        redditUsername: s.reddit_username,
+        redditSourceType: s.reddit_source_type,
         youtubeShortsFilter: s.youtube_shorts_filter || 'all',
         iconUrl: s.icon_url,
         description: s.description,
@@ -46,7 +49,7 @@ export class SourcesController {
   static async create(req: Request<{}, {}, CreateSourceRequest>, res: Response) {
     try {
       const userId = (req as any).userId;
-      const { name, url, type, channelId, youtubeShortsFilter, category, whitelistKeywords, blacklistKeywords } = req.body;
+      const { name, url, type, channelId, subreddit, redditUsername, redditSourceType, youtubeShortsFilter, category, whitelistKeywords, blacklistKeywords } = req.body;
 
       if (!name || !url) {
         return res.status(400).json({ error: 'Name and URL are required' });
@@ -55,6 +58,9 @@ export class SourcesController {
       const sourceType = type || 'rss';
       let feedUrl = url;
       let extractedChannelId = channelId;
+      let extractedSubreddit = subreddit;
+      let extractedRedditUsername = redditUsername;
+      let extractedRedditSourceType = redditSourceType;
       let iconUrl: string | undefined;
 
       // Handle YouTube sources
@@ -87,14 +93,38 @@ export class SourcesController {
                   'https://www.youtube.com/s/desktop/8f4c562e/img/favicon_144x144.png';
       }
 
+      // Handle Reddit sources
+      if (sourceType === 'reddit') {
+        const redditIdentifier = FeedService.extractRedditIdentifier(url);
+        if (!redditIdentifier) {
+          return res.status(400).json({ error: 'Invalid Reddit URL. Please provide a subreddit (e.g., r/programming) or user URL (e.g., u/username).' });
+        }
+
+        extractedRedditSourceType = redditIdentifier.type;
+        if (redditIdentifier.type === 'subreddit') {
+          extractedSubreddit = redditIdentifier.value;
+          feedUrl = FeedService.convertRedditSubredditToRss(redditIdentifier.value);
+          // Fetch subreddit icon
+          iconUrl = await FeedService.getRedditSubredditIcon(redditIdentifier.value) ||
+                    'https://www.redditstatic.com/desktop2x/img/favicon/favicon-96x96.png';
+        } else {
+          extractedRedditUsername = redditIdentifier.value;
+          feedUrl = FeedService.convertRedditUserToRss(redditIdentifier.value);
+          // Fetch user icon
+          iconUrl = await FeedService.getRedditUserIcon(redditIdentifier.value) ||
+                    'https://www.redditstatic.com/desktop2x/img/favicon/favicon-96x96.png';
+        }
+      }
+
       // Validate the feed URL and fetch metadata
       let feed;
       try {
         feed = await FeedService.fetchFeed(feedUrl);
       } catch (error) {
-        return res.status(400).json({
-          error: sourceType === 'youtube' ? 'Invalid YouTube channel' : 'Invalid RSS feed URL'
-        });
+        const errorMessage = sourceType === 'youtube' ? 'Invalid YouTube channel' :
+                            sourceType === 'reddit' ? 'Invalid Reddit source' :
+                            'Invalid RSS feed URL';
+        return res.status(400).json({ error: errorMessage });
       }
 
       // Get favicon URL for RSS feeds
@@ -114,15 +144,18 @@ export class SourcesController {
         : null;
 
       db.prepare(`
-        INSERT INTO sources (id, user_id, name, url, type, channel_id, youtube_shorts_filter, category, icon_url, whitelist_keywords, blacklist_keywords, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO sources (id, user_id, name, url, type, channel_id, subreddit, reddit_username, reddit_source_type, youtube_shorts_filter, category, icon_url, whitelist_keywords, blacklist_keywords, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         sourceId,
         userId,
         name,
-        feedUrl, // Store the RSS feed URL, not the original YouTube URL
+        feedUrl, // Store the RSS feed URL, not the original input URL
         sourceType,
         extractedChannelId || null,
+        extractedSubreddit || null,
+        extractedRedditUsername || null,
+        extractedRedditSourceType || null,
         youtubeShortsFilter || 'all',
         category || null,
         iconUrl || null,
@@ -159,6 +192,9 @@ export class SourcesController {
         url: source.url,
         type: source.type || 'rss',
         channelId: source.channel_id,
+        subreddit: source.subreddit,
+        redditUsername: source.reddit_username,
+        redditSourceType: source.reddit_source_type,
         youtubeShortsFilter: source.youtube_shorts_filter || 'all',
         iconUrl: source.icon_url,
         description: source.description,
@@ -242,6 +278,9 @@ export class SourcesController {
         url: updated.url,
         type: updated.type || 'rss',
         channelId: updated.channel_id,
+        subreddit: updated.subreddit,
+        redditUsername: updated.reddit_username,
+        redditSourceType: updated.reddit_source_type,
         youtubeShortsFilter: updated.youtube_shorts_filter || 'all',
         iconUrl: updated.icon_url,
         description: updated.description,

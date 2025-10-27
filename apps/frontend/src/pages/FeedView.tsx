@@ -122,11 +122,32 @@ export const FeedView: React.FC = () => {
   const contentItems: ContentItem[] = useMemo(() => {
     return feedItems.map(item => {
       const source = sources.find(s => s.id === item.sourceId);
+
+      // Extract first high-res image from content for Reddit galleries
+      let mediaUrl = item.imageUrl;
+      const content = item.content || '';
+
+      // Check if this is a Reddit gallery post (contains reddit-gallery div with img tags)
+      if (content.includes('reddit-gallery')) {
+        // Extract first image URL from content - match any img src attribute
+        // This handles both preview.redd.it and i.redd.it URLs
+        const imgMatch = content.match(/<img[^>]*src=["']([^"']+(?:preview\.redd\.it|i\.redd\.it)[^"']+)["']/);
+        if (imgMatch) {
+          console.log('[GALLERY] Extracted high-res URL:', imgMatch[1], 'from item:', item.title);
+          mediaUrl = imgMatch[1];
+          console.log('[GALLERY] Final mediaUrl:', mediaUrl);
+        } else {
+          console.warn('[GALLERY] Failed to extract URL from reddit-gallery content for:', item.title);
+        }
+      }
+
       return {
         id: item.id,
         title: item.title,
         source: {
+          type: source?.type || 'rss',
           name: source?.name || 'Unknown Source',
+          url: source?.url || '',
           icon: source?.icon || '',
         },
         publishedAt: item.publishedAt || new Date(),
@@ -136,9 +157,9 @@ export const FeedView: React.FC = () => {
           html: item.content || '',
           excerpt: item.excerpt || '',
         },
-        media: item.imageUrl ? [{
+        media: mediaUrl ? [{
           type: 'image' as const,
-          url: item.imageUrl,
+          url: mediaUrl,
           alt: item.title,
         }] : undefined,
         thumbnailUrl: item.imageUrl,

@@ -2,6 +2,7 @@
 
 export type SourceType = 'rss' | 'youtube' | 'reddit';
 export type YoutubeShortsFilter = 'all' | 'exclude' | 'only';
+export type RedditSourceType = 'subreddit' | 'user';
 
 export interface FeedSource {
   id: string; // UUID
@@ -13,6 +14,8 @@ export interface FeedSource {
   // Type-specific identifiers
   channelId?: string; // YouTube channel ID (e.g., UCsBjURrPoezykLs9EqgamOA)
   subreddit?: string; // Reddit subreddit name (e.g., programming)
+  redditUsername?: string; // Reddit username (e.g., spez)
+  redditSourceType?: RedditSourceType; // Whether Reddit source is subreddit or user
   youtubeShortsFilter?: YoutubeShortsFilter; // YouTube shorts filtering
 
   // Filtering

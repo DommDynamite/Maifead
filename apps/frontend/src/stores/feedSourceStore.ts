@@ -52,6 +52,9 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
         url: input.url,
         type: input.type,
         channelId: input.channelId,
+        subreddit: input.subreddit,
+        redditUsername: input.redditUsername,
+        redditSourceType: input.redditSourceType,
         youtubeShortsFilter: input.youtubeShortsFilter,
         category: input.category,
       });

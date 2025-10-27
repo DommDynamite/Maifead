@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import styled from 'styled-components';
-import { X, ExternalLink, BookmarkPlus, CheckCircle } from 'lucide-react';
+import { X, ExternalLink, BookmarkPlus, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import type { ContentItem } from '@maifead/types';
@@ -323,6 +323,48 @@ const Content = styled.div`
     }
   }
 
+  /* Reddit video styling */
+  video {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    border-radius: ${props => props.theme.borderRadius.md};
+    margin: ${props => props.theme.spacing[4]} 0 !important;
+    background: ${props => props.theme.colors.background};
+    display: block;
+    cursor: default !important; /* Override zoom cursor */
+  }
+
+  /* Video containers */
+  .video-container,
+  .reddit-video,
+  [class*="video"] {
+    max-width: 100% !important;
+    margin: ${props => props.theme.spacing[4]} 0 !important;
+  }
+
+  /* Prevent links around videos from being clickable */
+  a:has(video) {
+    pointer-events: none;
+    cursor: default;
+  }
+
+  /* Image gallery grid for Reddit multi-image posts */
+  p:has(> img + img),
+  div:has(> img + img) {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+    gap: ${props => props.theme.spacing[3]} !important;
+    margin: ${props => props.theme.spacing[4]} 0 !important;
+
+    img {
+      width: 100% !important;
+      height: 200px !important;
+      object-fit: cover !important;
+      margin: 0 !important;
+    }
+  }
+
   img {
     max-width: 100% !important;
     width: auto !important;
@@ -529,6 +571,7 @@ const LightboxCloseButton = styled.button`
   border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   transition: all ${props => props.theme.transitions.fast};
+  z-index: 10;
 
   &:hover {
     background: rgba(255, 255, 255, 0.2);
@@ -540,10 +583,80 @@ const LightboxCloseButton = styled.button`
   }
 `;
 
+const GalleryNavButton = styled.button<{ $direction: 'left' | 'right' }>`
+  position: fixed;
+  top: 50%;
+  ${props => props.$direction}: ${props => props.theme.spacing[6]};
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: ${props => props.theme.borderRadius.full};
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all ${props => props.theme.transitions.fast};
+  z-index: 10;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.md}) {
+    width: 40px;
+    height: 40px;
+    ${props => props.$direction}: ${props => props.theme.spacing[3]};
+  }
+`;
+
+const GalleryCounter = styled.div`
+  position: fixed;
+  top: ${props => props.theme.spacing[6]};
+  left: 50%;
+  transform: translateX(-50%);
+  padding: ${props => props.theme.spacing[2]} ${props => props.theme.spacing[4]};
+  border-radius: ${props => props.theme.borderRadius.full};
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: ${props => props.theme.fontSizes.sm};
+  font-weight: ${props => props.theme.fontWeights.medium};
+  z-index: 10;
+`;
+
 export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClose, onToggleRead }) => {
   const { readItemIds } = useUIStore();
   const contentRef = useRef<HTMLDivElement>(null);
-  const [lightboxImage, setLightboxImage] = React.useState<string | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+
+  // Extract all images from content for gallery navigation
+  const galleryImages = useMemo(() => {
+    if (!item?.content.html) return [];
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = item.content.html;
+    const imgElements = tempDiv.querySelectorAll('img');
+
+    return Array.from(imgElements)
+      .map(img => img.src)
+      .filter(src => src && (src.includes('i.redd.it') || src.includes('preview.redd.it')));
+  }, [item]);
 
   // Add click handler to images for lightbox
   useEffect(() => {
@@ -553,6 +666,8 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
       const target = e.target as HTMLElement;
       if (target.tagName === 'IMG') {
         const img = target as HTMLImageElement;
+        const clickedIndex = galleryImages.indexOf(img.src);
+        setGalleryIndex(clickedIndex >= 0 ? clickedIndex : 0);
         setLightboxImage(img.src);
       }
     };
@@ -562,7 +677,7 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
     return () => {
       contentRef.current?.removeEventListener('click', handleImageClick);
     };
-  }, [isOpen, item]);
+  }, [isOpen, item, galleryImages]);
 
   // Load and process embedded content
   useEffect(() => {
@@ -615,9 +730,9 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
     }
   }, [isOpen, item]);
 
-  // Close on Escape key
+  // Keyboard navigation
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (lightboxImage) {
           setLightboxImage(null);
@@ -625,18 +740,44 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
           onClose();
         }
       }
+
+      // Gallery navigation with arrow keys (only when lightbox is open)
+      if (lightboxImage && galleryImages.length > 1) {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          navigatePrevious();
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          navigateNext();
+        }
+      }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
     };
-  }, [isOpen, onClose, lightboxImage]);
+  }, [isOpen, onClose, lightboxImage, galleryImages, galleryIndex]);
+
+  // Gallery navigation functions
+  const navigateNext = () => {
+    if (galleryImages.length === 0) return;
+    const nextIndex = (galleryIndex + 1) % galleryImages.length;
+    setGalleryIndex(nextIndex);
+    setLightboxImage(galleryImages[nextIndex]);
+  };
+
+  const navigatePrevious = () => {
+    if (galleryImages.length === 0) return;
+    const prevIndex = (galleryIndex - 1 + galleryImages.length) % galleryImages.length;
+    setGalleryIndex(prevIndex);
+    setLightboxImage(galleryImages[prevIndex]);
+  };
 
   if (!item) return null;
 
@@ -646,6 +787,13 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
 
   // Check if content contains YouTube embed
   const hasYouTubeEmbed = item.content.html?.includes('youtube-embed') || item.content.html?.includes('youtube.com/embed');
+
+  // Check if content contains Reddit video (v.redd.it or embedded video)
+  const hasRedditVideo = item.content.html?.includes('v.redd.it') ||
+                         (item.content.html?.includes('<video') && item.source.type === 'reddit');
+
+  // Determine if we should hide the thumbnail (has video embed)
+  const hasVideoEmbed = hasYouTubeEmbed || hasRedditVideo;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -694,8 +842,8 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
               <Title>{item.title}</Title>
               {item.author && <Author>By {item.author.name}</Author>}
 
-              {/* Only show thumbnail if content doesn't have YouTube embed */}
-              {!hasYouTubeEmbed && primaryMedia && primaryMedia.type === 'image' && (
+              {/* Only show thumbnail if content doesn't have video embed */}
+              {!hasVideoEmbed && primaryMedia && primaryMedia.type === 'image' && (
                 <MediaContainer>
                   <MediaImage
                     src={primaryMedia.url}
@@ -705,8 +853,8 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
                 </MediaContainer>
               )}
 
-              {/* Only show video embed if content doesn't have YouTube embed */}
-              {!hasYouTubeEmbed && primaryMedia && primaryMedia.type === 'video' && primaryMedia.embedUrl && (
+              {/* Only show video embed if content doesn't have embedded video */}
+              {!hasVideoEmbed && primaryMedia && primaryMedia.type === 'video' && primaryMedia.embedUrl && (
                 <MediaContainer>
                   <VideoEmbed>
                     <iframe
@@ -752,6 +900,38 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
           <LightboxCloseButton onClick={() => setLightboxImage(null)} aria-label="Close lightbox">
             <X />
           </LightboxCloseButton>
+
+          {/* Gallery navigation - only show if multiple images */}
+          {galleryImages.length > 1 && (
+            <>
+              <GalleryNavButton
+                $direction="left"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigatePrevious();
+                }}
+                aria-label="Previous image"
+              >
+                <ChevronLeft />
+              </GalleryNavButton>
+
+              <GalleryCounter>
+                {galleryIndex + 1} of {galleryImages.length}
+              </GalleryCounter>
+
+              <GalleryNavButton
+                $direction="right"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateNext();
+                }}
+                aria-label="Next image"
+              >
+                <ChevronRight />
+              </GalleryNavButton>
+            </>
+          )}
+
           <LightboxImage
             src={lightboxImage}
             alt="Full size"
