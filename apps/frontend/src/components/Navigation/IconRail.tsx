@@ -156,7 +156,7 @@ export const IconRail: React.FC = () => {
     <RailContainer>
       <IconList>
         <IconButton
-          $active={isOnFeedPage && activeView === 'all'}
+          $active={isOnFeedPage}
           onClick={handleAllFeedsClick}
           aria-label="The Fead"
           title="The Fead"

@@ -244,6 +244,7 @@ export const FeedView: React.FC = () => {
 
     return sortedItems;
   }, [
+    contentItems,
     searchQuery,
     hideReadItems,
     readItemIds,

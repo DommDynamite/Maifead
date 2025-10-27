@@ -128,11 +128,11 @@ export const BottomNav: React.FC = () => {
     <NavContainer>
       <NavList>
         <NavButton
-          $active={isOnFeedPage && activeView === 'all'}
+          $active={isOnFeedPage}
           onClick={handleHomeClick}
           aria-label="The Fead"
         >
-          {isOnFeedPage && activeView === 'all' && <ActiveIndicator />}
+          {isOnFeedPage && <ActiveIndicator />}
           <Home />
           <NavLabel>Feed</NavLabel>
         </NavButton>

@@ -1,13 +1,13 @@
 // Feed Source types for managing RSS feeds and other content sources
 
-export type SourceType = 'rss' | 'youtube' | 'reddit';
+export type SourceType = 'rss' | 'youtube' | 'reddit' | 'bluesky';
 export type YoutubeShortsFilter = 'all' | 'exclude' | 'only';
 export type RedditSourceType = 'subreddit' | 'user';
 
 export interface FeedSource {
   id: string; // UUID
   name: string; // Display name (user-provided or auto-detected)
-  url: string; // Feed URL, YouTube channel URL, or Reddit subreddit URL
+  url: string; // Feed URL, YouTube channel URL, Reddit subreddit URL, or Bluesky profile URL
   icon?: string; // Feed icon/favicon URL
   type: SourceType;
 
@@ -17,6 +17,9 @@ export interface FeedSource {
   redditUsername?: string; // Reddit username (e.g., spez)
   redditSourceType?: RedditSourceType; // Whether Reddit source is subreddit or user
   youtubeShortsFilter?: YoutubeShortsFilter; // YouTube shorts filtering
+  blueskyHandle?: string; // Bluesky handle (e.g., user.bsky.social)
+  blueskyDid?: string; // Bluesky DID (Decentralized Identifier) for future API use
+  blueskyFeedUri?: string; // Custom Bluesky feed URI for future API enhancement
 
   // Filtering
   whitelistKeywords?: string[]; // Only show content matching these keywords

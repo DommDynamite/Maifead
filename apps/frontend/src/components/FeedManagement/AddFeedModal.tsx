@@ -7,6 +7,7 @@ import { SourceTypeSelector } from './SourceTypeSelector';
 import { RSSFeedForm } from './RSSFeedForm';
 import { YouTubeChannelForm } from './YouTubeChannelForm';
 import { RedditSourceForm } from './RedditSourceForm';
+import { BlueskySourceForm } from './BlueskySourceForm';
 import { useFeedSourceStore } from '../../stores/feedSourceStore';
 import type { FeedSourceInput, SourceType, RedditSourceType } from '@maifead/types';
 
@@ -238,6 +239,13 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
         input.redditUsername = identifier;
         input.redditSourceType = 'user';
       }
+    } else if (sourceType === 'bluesky') {
+      const handle = url.trim();
+      // Remove @ prefix if present
+      const cleanHandle = handle.startsWith('@') ? handle.slice(1) : handle;
+      input.name = name.trim() || cleanHandle;
+      input.url = handle.startsWith('http') ? handle : `https://bsky.app/profile/${cleanHandle}`;
+      input.blueskyHandle = cleanHandle;
     }
 
     createSource(input);
@@ -320,6 +328,15 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
                   onUrlChange={setUrl}
                   onNameChange={setName}
                   onSourceTypeChange={setRedditSourceType}
+                />
+              )}
+
+              {sourceType === 'bluesky' && (
+                <BlueskySourceForm
+                  url={url}
+                  name={name}
+                  onUrlChange={setUrl}
+                  onNameChange={setName}
                 />
               )}
 

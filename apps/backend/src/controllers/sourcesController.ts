@@ -27,6 +27,7 @@ export class SourcesController {
         redditUsername: s.reddit_username,
         redditSourceType: s.reddit_source_type,
         youtubeShortsFilter: s.youtube_shorts_filter || 'all',
+        blueskyHandle: s.bluesky_handle,
         iconUrl: s.icon_url,
         description: s.description,
         category: s.category,
@@ -61,6 +62,7 @@ export class SourcesController {
       let extractedSubreddit = subreddit;
       let extractedRedditUsername = redditUsername;
       let extractedRedditSourceType = redditSourceType;
+      let extractedBlueskyHandle: string | undefined;
       let iconUrl: string | undefined;
 
       // Handle YouTube sources
@@ -117,6 +119,20 @@ export class SourcesController {
         }
       }
 
+      // Handle Bluesky sources
+      if (sourceType === 'bluesky') {
+        const handle = FeedService.extractBlueskyHandle(url);
+        if (!handle) {
+          return res.status(400).json({ error: 'Invalid Bluesky handle. Please provide a handle (e.g., user.bsky.social) or profile URL.' });
+        }
+
+        extractedBlueskyHandle = handle;
+        feedUrl = FeedService.convertBlueskyToRss(handle);
+        // Fetch user avatar
+        iconUrl = await FeedService.getBlueskyAvatar(handle) ||
+                  'https://bsky.app/static/favicon-16x16.png';
+      }
+
       // Validate the feed URL and fetch metadata
       let feed;
       try {
@@ -124,6 +140,7 @@ export class SourcesController {
       } catch (error) {
         const errorMessage = sourceType === 'youtube' ? 'Invalid YouTube channel' :
                             sourceType === 'reddit' ? 'Invalid Reddit source' :
+                            sourceType === 'bluesky' ? 'Invalid Bluesky user' :
                             'Invalid RSS feed URL';
         return res.status(400).json({ error: errorMessage });
       }
@@ -145,8 +162,8 @@ export class SourcesController {
         : null;
 
       db.prepare(`
-        INSERT INTO sources (id, user_id, name, url, type, channel_id, subreddit, reddit_username, reddit_source_type, youtube_shorts_filter, category, icon_url, whitelist_keywords, blacklist_keywords, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO sources (id, user_id, name, url, type, channel_id, subreddit, reddit_username, reddit_source_type, youtube_shorts_filter, bluesky_handle, category, icon_url, whitelist_keywords, blacklist_keywords, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         sourceId,
         userId,
@@ -158,6 +175,7 @@ export class SourcesController {
         extractedRedditUsername || null,
         extractedRedditSourceType || null,
         youtubeShortsFilter || 'all',
+        extractedBlueskyHandle || null,
         category || null,
         iconUrl || null,
         whitelistJson,
@@ -176,7 +194,13 @@ export class SourcesController {
         url: source.url,
         type: source.type || 'rss',
         channelId: source.channel_id,
+        subreddit: source.subreddit,
+        redditUsername: source.reddit_username,
+        redditSourceType: source.reddit_source_type,
         youtubeShortsFilter: source.youtube_shorts_filter || 'all',
+        blueskyHandle: source.bluesky_handle,
+        blueskyDid: source.bluesky_did,
+        blueskyFeedUri: source.bluesky_feed_uri,
         iconUrl: source.icon_url,
         description: source.description,
         category: source.category,
@@ -197,6 +221,7 @@ export class SourcesController {
         redditUsername: source.reddit_username,
         redditSourceType: source.reddit_source_type,
         youtubeShortsFilter: source.youtube_shorts_filter || 'all',
+        blueskyHandle: source.bluesky_handle,
         iconUrl: source.icon_url,
         description: source.description,
         category: source.category,
@@ -283,6 +308,7 @@ export class SourcesController {
         redditUsername: updated.reddit_username,
         redditSourceType: updated.reddit_source_type,
         youtubeShortsFilter: updated.youtube_shorts_filter || 'all',
+        blueskyHandle: updated.bluesky_handle,
         iconUrl: updated.icon_url,
         description: updated.description,
         category: updated.category,
@@ -347,7 +373,13 @@ export class SourcesController {
         url: sourceRow.url,
         type: sourceRow.type || 'rss',
         channelId: sourceRow.channel_id,
+        subreddit: sourceRow.subreddit,
+        redditUsername: sourceRow.reddit_username,
+        redditSourceType: sourceRow.reddit_source_type,
         youtubeShortsFilter: sourceRow.youtube_shorts_filter || 'all',
+        blueskyHandle: sourceRow.bluesky_handle,
+        blueskyDid: sourceRow.bluesky_did,
+        blueskyFeedUri: sourceRow.bluesky_feed_uri,
         iconUrl: sourceRow.icon_url,
         description: sourceRow.description,
         category: sourceRow.category,

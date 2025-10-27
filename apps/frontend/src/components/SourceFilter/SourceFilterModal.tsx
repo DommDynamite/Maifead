@@ -243,7 +243,7 @@ export const SourceFilterModal: React.FC = () => {
   const { items: feedItems } = useFeedStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(['rss', 'reddit', 'youtube'])
+    new Set(['rss', 'reddit', 'youtube', 'bluesky'])
   );
 
   // Get sources available in current context
@@ -308,8 +308,11 @@ export const SourceFilterModal: React.FC = () => {
     const youtube = allSources
       .filter(s => s.type === 'youtube')
       .sort((a, b) => a.name.localeCompare(b.name));
+    const bluesky = allSources
+      .filter(s => s.type === 'bluesky')
+      .sort((a, b) => a.name.localeCompare(b.name));
 
-    return { rss, reddit, youtube, all: allSources };
+    return { rss, reddit, youtube, bluesky, all: allSources };
   }, [availableSources, feedItems]);
 
   const filteredBySearch = useMemo(() => {
@@ -323,6 +326,7 @@ export const SourceFilterModal: React.FC = () => {
       rss: filterSources(categorizedSources.rss),
       reddit: filterSources(categorizedSources.reddit),
       youtube: filterSources(categorizedSources.youtube),
+      bluesky: filterSources(categorizedSources.bluesky),
       all: categorizedSources.all.filter(s => s.name.toLowerCase().includes(query)),
     };
   }, [categorizedSources, searchQuery]);
@@ -449,6 +453,7 @@ export const SourceFilterModal: React.FC = () => {
               {renderCategory('rss', 'RSS Feeds', filteredBySearch.rss)}
               {renderCategory('reddit', 'Reddit', filteredBySearch.reddit)}
               {renderCategory('youtube', 'YouTube', filteredBySearch.youtube)}
+              {renderCategory('bluesky', 'Bluesky', filteredBySearch.bluesky)}
             </SourceList>
           </Modal>
         </Backdrop>

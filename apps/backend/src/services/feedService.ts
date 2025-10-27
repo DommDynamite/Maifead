@@ -2,6 +2,7 @@ import Parser from 'rss-parser';
 import { db } from '../config/database.js';
 import { randomUUID } from 'crypto';
 import type { Source, FeedItem } from '../types/index.js';
+import { BskyAgent } from '@atproto/api';
 
 const parser = new Parser({
   customFields: {
@@ -224,6 +225,272 @@ export class FeedService {
    */
   static convertRedditUserToRss(username: string): string {
     return `https://www.reddit.com/user/${username}/submitted.rss`;
+  }
+
+  /**
+   * Extract Bluesky handle from various input formats
+   * Supports:
+   * - https://bsky.app/profile/user.bsky.social
+   * - user.bsky.social
+   * - @user.bsky.social
+   */
+  static extractBlueskyHandle(input: string): string | null {
+    try {
+      const trimmed = input.trim();
+
+      // Try to parse as URL first
+      if (trimmed.startsWith('http')) {
+        const urlObj = new URL(trimmed);
+        // Handle bsky.app/profile/username format
+        const profileMatch = urlObj.pathname.match(/^\/profile\/([\w.-]+)/);
+        if (profileMatch) {
+          return profileMatch[1];
+        }
+        return null;
+      }
+
+      // Remove @ prefix if present
+      const withoutAt = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed;
+
+      // Validate handle format (username.domain.tld)
+      // Bluesky handles must have at least one dot and valid characters
+      if (/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(withoutAt)) {
+        return withoutAt;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error extracting Bluesky handle:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Convert Bluesky handle to RSS feed URL
+   * Uses Bluesky's native RSS feed which is available for all public profiles
+   * Can be enhanced with AT Protocol API later for more features
+   */
+  static convertBlueskyToRss(handle: string): string {
+    return `https://bsky.app/profile/${handle}/rss`;
+  }
+
+  /**
+   * Fetch Bluesky user avatar from their profile
+   */
+  static async getBlueskyAvatar(handle: string): Promise<string | null> {
+    try {
+      const profileUrl = `https://bsky.app/profile/${handle}`;
+      console.log(`[getBlueskyAvatar] Fetching URL: ${profileUrl}`);
+
+      const response = await fetch(profileUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`Failed to fetch Bluesky profile: ${response.status}`);
+        return null;
+      }
+
+      const html = await response.text();
+
+      // Try to find avatar in meta tags
+      // Bluesky uses og:image for profile avatars
+      const ogImageMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
+      if (ogImageMatch && ogImageMatch[1]) {
+        console.log(`[getBlueskyAvatar] Found avatar: ${ogImageMatch[1].substring(0, 100)}`);
+        return ogImageMatch[1];
+      }
+
+      // Fallback: try twitter:image meta tag
+      const twitterImageMatch = html.match(/<meta name="twitter:image" content="([^"]+)"/);
+      if (twitterImageMatch && twitterImageMatch[1]) {
+        console.log(`[getBlueskyAvatar] Found avatar from twitter:image: ${twitterImageMatch[1].substring(0, 100)}`);
+        return twitterImageMatch[1];
+      }
+
+      console.warn(`[getBlueskyAvatar] No avatar found for ${handle}`);
+      return null;
+    } catch (error) {
+      console.error('[getBlueskyAvatar] Error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Extract post URI from Bluesky post link
+   * Converts https://bsky.app/profile/user.bsky.social/post/abc123
+   * to at://did:plc:xxx/app.bsky.feed.post/abc123
+   */
+  private static extractBlueskyPostId(postLink: string): string | null {
+    try {
+      const urlObj = new URL(postLink);
+      const match = urlObj.pathname.match(/\/profile\/[^/]+\/post\/([a-zA-Z0-9]+)/);
+      return match ? match[1] : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Fetch Bluesky post data using AT Protocol API
+   * Returns images and embed information
+   */
+  static async fetchBlueskyPostData(postLink: string, handle: string): Promise<{
+    images: string[];
+    embedHtml?: string;
+  }> {
+    try {
+      const postId = this.extractBlueskyPostId(postLink);
+      if (!postId) {
+        console.log(`[fetchBlueskyPostData] Could not extract post ID from ${postLink}`);
+        return { images: [] };
+      }
+
+      // Create unauthenticated agent (public API access)
+      const agent = new BskyAgent({ service: 'https://public.api.bsky.app' });
+
+      // Resolve handle to DID
+      const resolveResult = await agent.resolveHandle({ handle });
+      const did = resolveResult.data.did;
+
+      // Construct AT URI
+      const postUri = `at://${did}/app.bsky.feed.post/${postId}`;
+
+      // Fetch post thread to get full post data
+      const threadResult = await agent.getPostThread({ uri: postUri });
+
+      if (!threadResult.success || threadResult.data.thread.$type !== 'app.bsky.feed.defs#threadViewPost') {
+        console.log(`[fetchBlueskyPostData] Failed to fetch post thread`);
+        return { images: [] };
+      }
+
+      const post = threadResult.data.thread.post;
+      const images: string[] = [];
+      let embedHtml: string | undefined;
+
+      // Check for embedded images
+      if (post.embed) {
+        const embed = post.embed;
+
+        // Handle image embeds (app.bsky.embed.images#view)
+        if (embed.$type === 'app.bsky.embed.images#view' && embed.images) {
+          for (const image of embed.images) {
+            if (image.fullsize) {
+              images.push(image.fullsize);
+            } else if (image.thumb) {
+              images.push(image.thumb);
+            }
+          }
+          console.log(`[fetchBlueskyPostData] Found ${images.length} images`);
+        }
+
+        // Handle external link embeds (app.bsky.embed.external#view)
+        if (embed.$type === 'app.bsky.embed.external#view' && embed.external) {
+          const external = embed.external;
+          const hostname = (() => {
+            try {
+              return new URL(external.uri).hostname;
+            } catch {
+              return external.uri;
+            }
+          })();
+
+          // Add the thumbnail to images array for the feed item preview
+          if (external.thumb && !images.includes(external.thumb)) {
+            images.push(external.thumb);
+          }
+
+          embedHtml = `
+            <a href="${external.uri}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit; display: block;">
+              <div class="bluesky-external-embed" style="border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; margin: 1rem 0; background: #ffffff; max-width: 550px; transition: box-shadow 0.2s; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)'">
+                ${external.thumb ? `
+                  <div style="width: 100%; aspect-ratio: 16/9; overflow: hidden; background: #f3f4f6;">
+                    <img src="${external.thumb}" style="width: 100%; height: 100%; object-fit: cover; display: block;" alt="${external.title || 'External link preview'}" />
+                  </div>
+                ` : ''}
+                <div style="padding: 0.875rem 1rem;">
+                  ${external.title ? `<div style="font-weight: 600; color: #111827; margin-bottom: 0.375rem; font-size: 0.9375rem; line-height: 1.4;">${external.title}</div>` : ''}
+                  ${external.description ? `<div style="color: #6b7280; font-size: 0.8125rem; margin-bottom: 0.5rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${external.description}</div>` : ''}
+                  <div style="color: #9ca3af; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.025em; font-weight: 500;">🔗 ${hostname}</div>
+                </div>
+              </div>
+            </a>
+          `.trim();
+          console.log(`[fetchBlueskyPostData] Found external embed: ${external.uri}, thumb: ${!!external.thumb}`);
+        }
+
+        // Handle video embeds (app.bsky.embed.video#view)
+        if (embed.$type === 'app.bsky.embed.video#view' && embed.playlist) {
+          embedHtml = `
+            <div class="bluesky-video-embed" style="position: relative; width: 100%; max-width: 600px; margin: 1rem auto;">
+              <video controls style="width: 100%; height: auto; border-radius: 8px; background: #000;">
+                <source src="${embed.playlist}" type="application/x-mpegURL">
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          `.trim();
+          console.log(`[fetchBlueskyPostData] Found video embed`);
+        }
+
+        // Handle record embeds (quote posts)
+        if (embed.$type === 'app.bsky.embed.record#view' && embed.record) {
+          const quotedPost = embed.record;
+          if (quotedPost.$type === 'app.bsky.embed.record#viewRecord') {
+            const author = quotedPost.author;
+            const quotedText = (quotedPost.value as any)?.text || '';
+            embedHtml = `
+              <div class="bluesky-quote-embed" style="border-left: 3px solid #3b82f6; padding-left: 1rem; margin: 1rem 0; background: #f9fafb; border-radius: 4px; padding: 1rem;">
+                <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">
+                  ${author.displayName || author.handle}
+                  <span style="color: #6b7280; font-weight: 400;">@${author.handle}</span>
+                </div>
+                <div style="color: #374151;">${quotedText}</div>
+              </div>
+            `.trim();
+            console.log(`[fetchBlueskyPostData] Found quote post`);
+          }
+        }
+
+        // Handle record with media (quote post with images)
+        if (embed.$type === 'app.bsky.embed.recordWithMedia#view') {
+          // Extract images from media
+          if (embed.media?.$type === 'app.bsky.embed.images#view' && embed.media.images) {
+            for (const image of embed.media.images) {
+              if (image.fullsize) {
+                images.push(image.fullsize);
+              } else if (image.thumb) {
+                images.push(image.thumb);
+              }
+            }
+          }
+
+          // Also handle the quoted record
+          if (embed.record?.record?.$type === 'app.bsky.embed.record#viewRecord') {
+            const quotedPost = embed.record.record;
+            const author = quotedPost.author;
+            const quotedText = (quotedPost.value as any)?.text || '';
+            embedHtml = `
+              <div class="bluesky-quote-embed" style="border-left: 3px solid #3b82f6; padding-left: 1rem; margin: 1rem 0; background: #f9fafb; border-radius: 4px; padding: 1rem;">
+                <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">
+                  ${author.displayName || author.handle}
+                  <span style="color: #6b7280; font-weight: 400;">@${author.handle}</span>
+                </div>
+                <div style="color: #374151;">${quotedText}</div>
+              </div>
+            `.trim();
+          }
+          console.log(`[fetchBlueskyPostData] Found record with media (${images.length} images)`);
+        }
+      }
+
+      return { images, embedHtml };
+    } catch (error) {
+      console.error('[fetchBlueskyPostData] Error fetching post data:', error);
+      return { images: [] };
+    }
   }
 
   /**
@@ -807,6 +1074,7 @@ export class FeedService {
    */
   static async fetchAndStoreItems(source: Source): Promise<number> {
     try {
+      console.log(`[fetchAndStoreItems] Processing source: ${source.name}, type: ${source.type}, blueskyHandle: ${(source as any).blueskyHandle}`);
       const feed = await this.fetchFeed(source.url);
       let newItemsCount = 0;
 
@@ -828,7 +1096,7 @@ export class FeedService {
         }
 
         // Extract image URL from various possible locations
-        const imageUrl = this.extractImageUrl(item);
+        let imageUrl = this.extractImageUrl(item);
 
         // Extract content - for YouTube, create embedded player
         let content = (item as any).contentEncoded || item.content || item.description || '';
@@ -909,13 +1177,59 @@ export class FeedService {
           }
         }
 
+        // If this is a Bluesky source, fetch images and embeds from AT Protocol API
+        if (source.type === 'bluesky' && item.link && (source as any).blueskyHandle) {
+          console.log(`[fetchAndStoreItems] Processing Bluesky post: ${item.link} for handle: ${(source as any).blueskyHandle}`);
+          try {
+            const blueskyData = await this.fetchBlueskyPostData(item.link, (source as any).blueskyHandle);
+            console.log(`[fetchAndStoreItems] Bluesky API returned ${blueskyData.images.length} images, embedHtml: ${!!blueskyData.embedHtml}`);
+
+            // Add images to content if found
+            if (blueskyData.images.length > 0) {
+              const imageElements = blueskyData.images.map(url =>
+                `<img src="${url}" style="width: 100%; height: auto; border-radius: 8px; margin: 0.5rem 0;" />`
+              ).join('\n');
+
+              const imageGallery = `
+                <div class="bluesky-images" style="margin: 1rem 0;">
+                  ${imageElements}
+                </div>
+              `.trim();
+
+              content = imageGallery + '\n' + content;
+
+              // Use first image as the feed item thumbnail
+              if (!imageUrl) {
+                imageUrl = blueskyData.images[0];
+              }
+            }
+
+            // Add embed HTML if present
+            if (blueskyData.embedHtml) {
+              content = blueskyData.embedHtml + '\n' + content;
+            }
+          } catch (error) {
+            console.error(`[fetchBlueskyPostData] Error processing Bluesky post ${item.link}:`, error);
+            // Continue without images/embeds if API call fails
+          }
+        }
+
         const excerpt = this.createExcerpt(item.contentSnippet || item.description || content);
+
+        // Generate title from content for Bluesky posts (which typically don't have titles)
+        let title = item.title || '';
+        if (!title && source.type === 'bluesky') {
+          title = this.generateTitleFromContent(content || item.description || '');
+        }
+        if (!title) {
+          title = 'Untitled';
+        }
 
         // Create feed item
         const feedItem: Omit<FeedItem, 'createdAt'> & { createdAt: number } = {
           id: randomUUID(),
           sourceId: source.id,
-          title: item.title || 'Untitled',
+          title,
           link: item.link || '',
           content,
           excerpt,
@@ -1067,6 +1381,42 @@ export class FeedService {
   }
 
   /**
+   * Generate a title from content (used for Bluesky posts that don't have titles)
+   * Extracts first sentence or first N characters of content
+   */
+  private static generateTitleFromContent(content: string, maxLength: number = 100): string {
+    // Strip HTML tags
+    const stripped = content.replace(/<[^>]*>/g, '').trim();
+
+    if (!stripped) return 'Untitled';
+
+    // Try to get first sentence (ending with . ! ? or newline)
+    const sentenceMatch = stripped.match(/^[^.!?\n]+[.!?]/);
+    if (sentenceMatch) {
+      const sentence = sentenceMatch[0].trim();
+      if (sentence.length <= maxLength) {
+        return sentence;
+      }
+      // If sentence is too long, truncate it
+      return sentence.substring(0, maxLength).trim() + '...';
+    }
+
+    // No sentence ending found, just truncate at word boundary
+    if (stripped.length <= maxLength) {
+      return stripped;
+    }
+
+    // Truncate at last space before maxLength
+    const truncated = stripped.substring(0, maxLength);
+    const lastSpace = truncated.lastIndexOf(' ');
+    if (lastSpace > maxLength * 0.6) { // Only use word boundary if it's not too far back
+      return truncated.substring(0, lastSpace).trim() + '...';
+    }
+
+    return truncated.trim() + '...';
+  }
+
+  /**
    * Update source icon URL by fetching it from the feed
    */
   static async updateSourceIcon(sourceId: string, url: string): Promise<void> {
@@ -1115,6 +1465,9 @@ export class FeedService {
       redditUsername: row.reddit_username,
       redditSourceType: row.reddit_source_type,
       youtubeShortsFilter: row.youtube_shorts_filter || 'all',
+      blueskyHandle: row.bluesky_handle,
+      blueskyDid: row.bluesky_did,
+      blueskyFeedUri: row.bluesky_feed_uri,
       iconUrl: row.icon_url,
       description: row.description,
       category: row.category,

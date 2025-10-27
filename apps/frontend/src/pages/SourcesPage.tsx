@@ -251,6 +251,11 @@ const TypeBadge = styled.div<{ $type: string }>`
         background: #ff450022;
         color: #ff4500;
       `;
+    } else if (props.$type === 'bluesky') {
+      return `
+        background: #1185fe22;
+        color: #1185fe;
+      `;
     } else {
       return `
         background: ${props.theme.colors.primary}22;

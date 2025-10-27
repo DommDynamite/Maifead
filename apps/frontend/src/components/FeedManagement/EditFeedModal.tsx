@@ -277,18 +277,20 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
 
               <FormGroup>
                 <Label htmlFor="feed-url-display">
-                  {source.type === 'reddit' ? 'Subreddit' : 'URL'}
+                  {source.type === 'reddit' ? 'Subreddit' : source.type === 'bluesky' ? 'Bluesky Handle' : 'URL'}
                 </Label>
                 <Input
                   id="feed-url-display"
-                  type={source.type === 'reddit' ? 'text' : 'url'}
-                  value={source.type === 'reddit' ? source.subreddit || '' : source.url}
+                  type="text"
+                  value={source.type === 'reddit' ? source.subreddit || '' : source.type === 'bluesky' ? source.blueskyHandle || '' : source.url}
                   disabled
                   readOnly
                 />
                 <HelpText>
                   {source.type === 'reddit'
                     ? 'Subreddit cannot be changed.'
+                    : source.type === 'bluesky'
+                    ? 'Bluesky handle cannot be changed.'
                     : 'URL cannot be changed.'} Delete and re-add to change.
                 </HelpText>
               </FormGroup>

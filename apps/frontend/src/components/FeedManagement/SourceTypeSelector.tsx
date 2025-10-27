@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Rss, Youtube, MessageSquare } from 'lucide-react';
+import { Rss, Youtube, MessageSquare, Cloud } from 'lucide-react';
 import type { SourceType } from '@maifead/types';
 
 interface SourceTypeSelectorProps {
@@ -22,7 +22,7 @@ const Label = styled.label`
 
 const TypeGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: ${props => props.theme.spacing[3]};
 `;
 
@@ -88,6 +88,12 @@ export const SourceTypeSelector: React.FC<SourceTypeSelectorProps> = ({ selected
           <MessageSquare />
           <TypeTitle $selected={selectedType === 'reddit'}>Reddit</TypeTitle>
           <TypeDescription>Follow a subreddit</TypeDescription>
+        </TypeCard>
+
+        <TypeCard $selected={selectedType === 'bluesky'} onClick={() => onTypeChange('bluesky')} type="button">
+          <Cloud />
+          <TypeTitle $selected={selectedType === 'bluesky'}>Bluesky</TypeTitle>
+          <TypeDescription>Follow a Bluesky user</TypeDescription>
         </TypeCard>
       </TypeGrid>
     </Container>
