@@ -13,7 +13,7 @@ interface UIStore {
 
   // Panel states
   isSettingsPanelOpen: boolean;
-  isSourcesPanelOpen: boolean;
+  isSourceFilterModalOpen: boolean;
   isFeadsPanelOpen: boolean;
   isFeedControlsPanelOpen: boolean;
   isCollectionsPanelOpen: boolean;
@@ -39,7 +39,7 @@ interface UIStore {
   setFeedLayout: (layout: FeedLayout) => void;
   toggleSettingsPanel: () => void;
   closeSettingsPanel: () => void;
-  toggleSourcesPanel: () => void;
+  toggleSourceFilterModal: () => void;
   toggleFeadsPanel: () => void;
   toggleFeedControlsPanel: () => void;
   toggleCollectionsPanel: () => void;
@@ -67,7 +67,7 @@ export const useUIStore = create<UIStore>()(
       maxCardWidth: 700,
       feedLayout: 'single',
       isSettingsPanelOpen: false,
-      isSourcesPanelOpen: false,
+      isSourceFilterModalOpen: false,
       isFeadsPanelOpen: false,
       isFeedControlsPanelOpen: false,
       isCollectionsPanelOpen: false,
@@ -87,38 +87,32 @@ export const useUIStore = create<UIStore>()(
       setFeedLayout: layout => set({ feedLayout: layout }),
       toggleSettingsPanel: () => set(state => ({ isSettingsPanelOpen: !state.isSettingsPanelOpen })),
       closeSettingsPanel: () => set({ isSettingsPanelOpen: false }),
-      toggleSourcesPanel: () =>
+      toggleSourceFilterModal: () =>
         set(state => ({
-          isSourcesPanelOpen: !state.isSourcesPanelOpen,
-          isFeadsPanelOpen: false, // Close other panels
-          isFeedControlsPanelOpen: false,
-          isCollectionsPanelOpen: false,
+          isSourceFilterModalOpen: !state.isSourceFilterModalOpen,
         })),
       toggleFeadsPanel: () =>
         set(state => ({
           isFeadsPanelOpen: !state.isFeadsPanelOpen,
-          isSourcesPanelOpen: false, // Close other panels
           isFeedControlsPanelOpen: false,
           isCollectionsPanelOpen: false,
         })),
       toggleFeedControlsPanel: () =>
         set(state => ({
           isFeedControlsPanelOpen: !state.isFeedControlsPanelOpen,
-          isSourcesPanelOpen: false, // Close other panels
           isFeadsPanelOpen: false,
           isCollectionsPanelOpen: false,
         })),
       toggleCollectionsPanel: () =>
         set(state => ({
           isCollectionsPanelOpen: !state.isCollectionsPanelOpen,
-          isSourcesPanelOpen: false, // Close other panels
           isFeadsPanelOpen: false,
           isFeedControlsPanelOpen: false,
         })),
       closeAllPanels: () =>
         set({
           isSettingsPanelOpen: false,
-          isSourcesPanelOpen: false,
+          isSourceFilterModalOpen: false,
           isFeadsPanelOpen: false,
           isFeedControlsPanelOpen: false,
           isCollectionsPanelOpen: false,

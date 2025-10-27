@@ -15,6 +15,7 @@ import { useKeyboardShortcuts, type KeyboardShortcut } from '../hooks/useKeyboar
 import { KeyboardShortcutsHelp } from '../components/KeyboardShortcuts/KeyboardShortcutsHelp';
 import { CardSkeleton } from '../components/Skeleton/CardSkeleton';
 import { EmptyState as EmptyStateComponent } from '../components/EmptyState/EmptyState';
+import { SourceFilterModal } from '../components/SourceFilter/SourceFilterModal';
 
 const FeedContainer = styled.div`
   min-height: 100vh;
@@ -104,12 +105,12 @@ export const FeedView: React.FC = () => {
     setViewMode,
     toggleReadState,
     markAsRead,
-    toggleSourcesPanel,
+    toggleSourceFilterModal,
     toggleFeadsPanel,
     toggleCollectionsPanel,
     toggleFeedControlsPanel,
     isFeedControlsPanelOpen,
-    isSourcesPanelOpen,
+    isSourceFilterModalOpen,
     isFeadsPanelOpen,
     isCollectionsPanelOpen,
   } = useUIStore();
@@ -329,8 +330,8 @@ export const FeedView: React.FC = () => {
       // Panels
       {
         key: 's',
-        description: 'Toggle sources panel',
-        action: toggleSourcesPanel,
+        description: 'Toggle source filter',
+        action: toggleSourceFilterModal,
       },
       {
         key: 'f',
@@ -346,7 +347,7 @@ export const FeedView: React.FC = () => {
         key: 'Escape',
         description: 'Close all panels',
         action: () => {
-          if (isSourcesPanelOpen) toggleSourcesPanel();
+          if (isSourceFilterModalOpen) toggleSourceFilterModal();
           if (isFeadsPanelOpen) toggleFeadsPanel();
           if (isCollectionsPanelOpen) toggleCollectionsPanel();
           if (isFeedControlsPanelOpen) toggleFeedControlsPanel();
@@ -422,7 +423,7 @@ export const FeedView: React.FC = () => {
       selectedIndex,
       isModalOpen,
       viewMode,
-      isSourcesPanelOpen,
+      isSourceFilterModalOpen,
       isFeadsPanelOpen,
       isCollectionsPanelOpen,
       isFeedControlsPanelOpen,
@@ -467,6 +468,7 @@ export const FeedView: React.FC = () => {
         onClose={handleCloseModal}
         onToggleRead={handleToggleRead}
       />
+      <SourceFilterModal />
       <KeyboardShortcutsHelp isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} shortcuts={shortcuts} />
     </FeedContainer>
   );

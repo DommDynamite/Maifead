@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import styled from 'styled-components';
-import { Search, X, Eye, EyeOff } from 'lucide-react';
+import { Search, X, Eye, EyeOff, Filter } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 
 const SearchWrapper = styled.div`
@@ -121,11 +121,13 @@ interface SearchBarProps {
 }
 
 export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({ resultCount }, ref) => {
-  const { searchQuery, hideReadItems, setSearchQuery, toggleHideReadItems } = useUIStore();
+  const { searchQuery, hideReadItems, selectedSourceNames, setSearchQuery, toggleHideReadItems, toggleSourceFilterModal } = useUIStore();
 
   const handleClear = () => {
     setSearchQuery('');
   };
+
+  const hasSourceFilter = selectedSourceNames.length > 0;
 
   return (
     <SearchWrapper>
@@ -145,6 +147,15 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({ resultC
         )}
       </SearchContainer>
       <FilterControls>
+        <IconButton
+          $active={hasSourceFilter}
+          onClick={toggleSourceFilterModal}
+          aria-label="Filter by source"
+          title={hasSourceFilter ? `Filtering by ${selectedSourceNames.length} sources` : 'Filter by source'}
+        >
+          <Filter />
+          {hasSourceFilter && <ResultCount>{selectedSourceNames.length}</ResultCount>}
+        </IconButton>
         <IconButton
           $active={hideReadItems}
           onClick={toggleHideReadItems}

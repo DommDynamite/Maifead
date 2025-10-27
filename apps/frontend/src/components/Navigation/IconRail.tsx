@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Radio, Library, Star, Folder, Settings, User, LogOut } from 'lucide-react';
+import { Home, Library, Folder, Settings, User, LogOut } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -102,11 +102,9 @@ export const IconRail: React.FC = () => {
   const {
     activeView,
     setActiveView,
-    toggleSourcesPanel,
     toggleFeadsPanel,
     toggleCollectionsPanel,
     toggleSettingsPanel,
-    isSourcesPanelOpen,
     isFeadsPanelOpen,
     isCollectionsPanelOpen,
   } = useUIStore();
@@ -122,23 +120,12 @@ export const IconRail: React.FC = () => {
     useUIStore.getState().clearSourceSelection();
   };
 
-  const handleSourcesClick = () => {
-    toggleSourcesPanel();
-  };
-
   const handleFeadsClick = () => {
     toggleFeadsPanel();
   };
 
   const handleCollectionsClick = () => {
     toggleCollectionsPanel();
-  };
-
-  const handleSavedClick = () => {
-    if (location.pathname !== '/') {
-      navigate('/');
-    }
-    setActiveView('saved');
   };
 
   const handleSettingsClick = () => {
@@ -172,16 +159,6 @@ export const IconRail: React.FC = () => {
         </IconButton>
 
         <IconButton
-          $active={isSourcesPanelOpen || activeView === 'sources'}
-          onClick={handleSourcesClick}
-          aria-label="Sources"
-          title="Sources"
-        >
-          <Radio />
-          <Tooltip>Sources</Tooltip>
-        </IconButton>
-
-        <IconButton
           $active={isFeadsPanelOpen || activeView === 'fead'}
           onClick={handleFeadsClick}
           aria-label="Feads"
@@ -199,16 +176,6 @@ export const IconRail: React.FC = () => {
         >
           <Folder />
           <Tooltip>Collections</Tooltip>
-        </IconButton>
-
-        <IconButton
-          $active={activeView === 'saved'}
-          onClick={handleSavedClick}
-          aria-label="Saved Items"
-          title="Saved Items"
-        >
-          <Star />
-          <Tooltip>Saved</Tooltip>
         </IconButton>
       </IconList>
 
