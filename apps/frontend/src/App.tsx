@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { Layout } from './components/Layout/Layout';
@@ -9,6 +9,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { IconRail } from './components/Navigation/IconRail';
 import { BottomNav } from './components/Navigation/BottomNav';
 import { FeadsPanel } from './components/Navigation/FeadsPanel';
+import { FeadModal } from './components/Navigation/FeadModal';
 import { CollectionsPanel } from './components/Navigation/CollectionsPanel';
 import { FeedControlsPanel } from './components/FeedControls/FeedControlsPanel';
 import { ToastContainer } from './components/Toast/ToastContainer';
@@ -17,13 +18,19 @@ import { useAuthStore } from './stores/authStore';
 import { useFeedSourceStore } from './stores/feedSourceStore';
 import { useCollectionStore } from './stores/collectionStore';
 import { useFeedStore } from './stores/feedStore';
+import { useFeadStore } from './stores/feadStore';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import type { FeadWithNames } from '@maifead/types';
 
 function AppContent() {
   const { initialize, isAuthenticated } = useAuthStore();
   const { fetchSources } = useFeedSourceStore();
   const { fetchCollections } = useCollectionStore();
   const { fetchItems } = useFeedStore();
+  const { createFead, updateFead } = useFeadStore();
+
+  const [isFeadModalOpen, setIsFeadModalOpen] = useState(false);
+  const [editingFead, setEditingFead] = useState<FeadWithNames | null>(null);
 
   // Register service worker for PWA functionality
   useRegisterSW({
@@ -61,11 +68,40 @@ function AppContent() {
 
   const feedItems = useFeedStore(state => state.items);
 
+  const handleCreateFead = () => {
+    setEditingFead(null);
+    setIsFeadModalOpen(true);
+  };
+
+  const handleEditFead = (fead: FeadWithNames) => {
+    setEditingFead(fead);
+    setIsFeadModalOpen(true);
+  };
+
+  const handleSaveFead = (feadData: { name: string; icon: string; sourceNames: string[] }) => {
+    if (editingFead) {
+      updateFead(editingFead.id, feadData);
+    } else {
+      createFead(feadData);
+    }
+  };
+
+  const handleCloseFeadModal = () => {
+    setIsFeadModalOpen(false);
+    setEditingFead(null);
+  };
+
   return (
     <>
       <IconRail />
       <BottomNav />
-      <FeadsPanel />
+      <FeadsPanel onCreateFead={handleCreateFead} onEditFead={handleEditFead} />
+      <FeadModal
+        isOpen={isFeadModalOpen}
+        onClose={handleCloseFeadModal}
+        onSave={handleSaveFead}
+        editFead={editingFead}
+      />
       <CollectionsPanel />
       <FeedControlsPanel items={feedItems} />
       <ToastContainer />

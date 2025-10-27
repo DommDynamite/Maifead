@@ -89,6 +89,7 @@ export const BottomNav: React.FC = () => {
   const isOnSourcesPage = location.pathname === '/sources';
   const isOnProfilePage = location.pathname === '/profile';
   const isOnAuthPage = location.pathname === '/auth';
+  const isOnFeedPage = location.pathname === '/';
 
   const handleHomeClick = () => {
     if (location.pathname !== '/') {
@@ -98,10 +99,16 @@ export const BottomNav: React.FC = () => {
   };
 
   const handleFeadsClick = () => {
+    if (!isOnFeedPage) {
+      navigate('/');
+    }
     toggleFeadsPanel();
   };
 
   const handleCollectionsClick = () => {
+    if (!isOnFeedPage) {
+      navigate('/');
+    }
     toggleCollectionsPanel();
   };
 
@@ -121,31 +128,31 @@ export const BottomNav: React.FC = () => {
     <NavContainer>
       <NavList>
         <NavButton
-          $active={activeView === 'all' && location.pathname === '/'}
+          $active={isOnFeedPage && activeView === 'all'}
           onClick={handleHomeClick}
           aria-label="The Fead"
         >
-          {activeView === 'all' && location.pathname === '/' && <ActiveIndicator />}
+          {isOnFeedPage && activeView === 'all' && <ActiveIndicator />}
           <Home />
           <NavLabel>Feed</NavLabel>
         </NavButton>
 
         <NavButton
-          $active={isFeadsPanelOpen || activeView === 'fead'}
+          $active={isOnFeedPage && (isFeadsPanelOpen || activeView === 'fead')}
           onClick={handleFeadsClick}
           aria-label="Feads"
         >
-          {(isFeadsPanelOpen || activeView === 'fead') && <ActiveIndicator />}
+          {isOnFeedPage && (isFeadsPanelOpen || activeView === 'fead') && <ActiveIndicator />}
           <Library />
           <NavLabel>Feads</NavLabel>
         </NavButton>
 
         <NavButton
-          $active={isCollectionsPanelOpen || activeView === 'collection'}
+          $active={isOnFeedPage && (isCollectionsPanelOpen || activeView === 'collection')}
           onClick={handleCollectionsClick}
           aria-label="Collections"
         >
-          {(isCollectionsPanelOpen || activeView === 'collection') && <ActiveIndicator />}
+          {isOnFeedPage && (isCollectionsPanelOpen || activeView === 'collection') && <ActiveIndicator />}
           <Folder />
           <NavLabel>Saved</NavLabel>
         </NavButton>

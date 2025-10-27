@@ -20,33 +20,7 @@ interface FeadStore {
 export const useFeadStore = create<FeadStore>()(
   persist(
     (set, get) => ({
-      feads: [
-        // Default example Feads
-        {
-          id: 'fead-tech-news',
-          name: 'Tech News',
-          icon: '⚡',
-          sourceNames: ['TechCrunch', 'The Verge', 'Hacker News'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: 'fead-web-design',
-          name: 'Web Design',
-          icon: '🎨',
-          sourceNames: ['CSS-Tricks', 'Smashing Magazine', 'A List Apart'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: 'fead-programming',
-          name: 'Programming',
-          icon: '💻',
-          sourceNames: ['Rust Blog', 'Hacker News'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ],
+      feads: [],
 
       createFead: (input: FeadInput) => {
         const newFead: FeadWithNames = {

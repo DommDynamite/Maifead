@@ -111,6 +111,7 @@ export const IconRail: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuthStore();
 
   const isOnSourcesPage = location.pathname === '/sources';
+  const isOnFeedPage = location.pathname === '/';
 
   const handleAllFeedsClick = () => {
     if (location.pathname !== '/') {
@@ -121,10 +122,16 @@ export const IconRail: React.FC = () => {
   };
 
   const handleFeadsClick = () => {
+    if (!isOnFeedPage) {
+      navigate('/');
+    }
     toggleFeadsPanel();
   };
 
   const handleCollectionsClick = () => {
+    if (!isOnFeedPage) {
+      navigate('/');
+    }
     toggleCollectionsPanel();
   };
 
@@ -149,7 +156,7 @@ export const IconRail: React.FC = () => {
     <RailContainer>
       <IconList>
         <IconButton
-          $active={activeView === 'all'}
+          $active={isOnFeedPage && activeView === 'all'}
           onClick={handleAllFeedsClick}
           aria-label="The Fead"
           title="The Fead"
@@ -159,7 +166,7 @@ export const IconRail: React.FC = () => {
         </IconButton>
 
         <IconButton
-          $active={isFeadsPanelOpen || activeView === 'fead'}
+          $active={isOnFeedPage && (isFeadsPanelOpen || activeView === 'fead')}
           onClick={handleFeadsClick}
           aria-label="Feads"
           title="Feads (Presets)"
@@ -169,7 +176,7 @@ export const IconRail: React.FC = () => {
         </IconButton>
 
         <IconButton
-          $active={isCollectionsPanelOpen || activeView === 'collection'}
+          $active={isOnFeedPage && (isCollectionsPanelOpen || activeView === 'collection')}
           onClick={handleCollectionsClick}
           aria-label="Collections"
           title="Collections"
