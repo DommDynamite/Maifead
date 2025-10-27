@@ -323,6 +323,27 @@ const Content = styled.div`
     }
   }
 
+  /* Redgifs embed styling */
+  .redgifs-embed {
+    margin: ${props => props.theme.spacing[4]} 0 !important;
+    border-radius: ${props => props.theme.borderRadius.md};
+    overflow: hidden;
+    background: #000;
+    position: relative;
+
+    iframe {
+      margin: 0 !important;
+      border-radius: ${props => props.theme.borderRadius.md};
+      pointer-events: auto !important;
+    }
+  }
+
+  /* Prevent links around Redgifs embeds from being clickable */
+  a:has(.redgifs-embed) {
+    pointer-events: none;
+    cursor: default;
+  }
+
   /* Reddit video styling */
   video {
     width: 100% !important;
@@ -658,24 +679,33 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
       .filter(src => src && (src.includes('i.redd.it') || src.includes('preview.redd.it')));
   }, [item]);
 
-  // Add click handler to images for lightbox
+  // Add click handler to images for lightbox and prevent link navigation
   useEffect(() => {
     if (!isOpen || !item || !contentRef.current) return;
 
-    const handleImageClick = (e: MouseEvent) => {
+    const handleContentClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
+
+      // Handle image clicks for lightbox
       if (target.tagName === 'IMG') {
         const img = target as HTMLImageElement;
         const clickedIndex = galleryImages.indexOf(img.src);
         setGalleryIndex(clickedIndex >= 0 ? clickedIndex : 0);
         setLightboxImage(img.src);
+        return;
+      }
+
+      // Prevent link navigation (but allow iframe interaction)
+      if (target.tagName === 'A' || target.closest('a')) {
+        e.preventDefault();
+        return;
       }
     };
 
-    contentRef.current.addEventListener('click', handleImageClick);
+    contentRef.current.addEventListener('click', handleContentClick, true);
 
     return () => {
-      contentRef.current?.removeEventListener('click', handleImageClick);
+      contentRef.current?.removeEventListener('click', handleContentClick, true);
     };
   }, [isOpen, item, galleryImages]);
 
@@ -792,8 +822,11 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
   const hasRedditVideo = item.content.html?.includes('v.redd.it') ||
                          (item.content.html?.includes('<video') && item.source.type === 'reddit');
 
+  // Check if content contains Redgifs embed
+  const hasRedgifsEmbed = item.content.html?.includes('redgifs-embed') || item.content.html?.includes('redgifs.com/ifr');
+
   // Determine if we should hide the thumbnail (has video embed)
-  const hasVideoEmbed = hasYouTubeEmbed || hasRedditVideo;
+  const hasVideoEmbed = hasYouTubeEmbed || hasRedditVideo || hasRedgifsEmbed;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {

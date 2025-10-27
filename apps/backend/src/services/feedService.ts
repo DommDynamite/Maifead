@@ -455,72 +455,34 @@ export class FeedService {
   }
 
   /**
-   * Fetch Redgifs video MP4 URL from the watch page
+   * Extract Redgifs video ID from URL
    */
-  private static async fetchRedgifsVideoUrl(watchUrl: string): Promise<string | null> {
-    try {
-      // Extract the video ID from the watch URL
-      const idMatch = watchUrl.match(/\/watch\/([a-zA-Z0-9-_]+)/i);
-      if (!idMatch) {
-        return null;
-      }
-
-      const videoId = idMatch[1];
-
-      // Fetch the Redgifs API endpoint to get video data
-      // Redgifs has a public API at https://api.redgifs.com/v2/gifs/{id}
-      const response = await fetch(`https://api.redgifs.com/v2/gifs/${videoId}`, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        console.error(`Failed to fetch Redgifs data: ${response.status}`);
-        return null;
-      }
-
-      const data = await response.json() as any;
-
-      // The API returns video URLs in the gif.urls object
-      // Priority: HD > SD > Mobile
-      const urls = data?.gif?.urls;
-      if (!urls) {
-        return null;
-      }
-
-      // Try to get the best quality video URL
-      if (urls.hd) {
-        return urls.hd;
-      } else if (urls.sd) {
-        return urls.sd;
-      } else if (urls.mobile) {
-        return urls.mobile;
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Error fetching Redgifs video URL:', error);
-      return null;
-    }
+  private static extractRedgifsId(url: string): string | null {
+    const idMatch = url.match(/\/watch\/([a-zA-Z0-9-_]+)/i);
+    return idMatch ? idMatch[1] : null;
   }
 
   /**
-   * Create Redgifs video embed HTML
+   * Create Redgifs iframe embed HTML
+   * Uses Redgifs' official embed which doesn't require API authentication
+   * Uses taller aspect ratio (9:16) to better fit portrait-oriented videos
    */
-  private static createRedgifsEmbed(videoUrl: string): string {
+  private static createRedgifsEmbed(watchUrl: string): string {
+    const videoId = this.extractRedgifsId(watchUrl);
+    if (!videoId) {
+      return '';
+    }
+
     return `
-      <div class="redgifs-video" style="margin: 1rem 0;">
-        <video
-          controls
-          loop
-          preload="metadata"
-          style="width: 100%; max-width: 100%; height: auto; border-radius: 8px; background: #000;"
-        >
-          <source src="${videoUrl}" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
+      <div class="redgifs-embed" style="position: relative; padding-bottom: 133%; height: 0; overflow: hidden; max-width: 600px; margin: 1rem auto; border-radius: 8px; background: #000;">
+        <iframe
+          src="https://www.redgifs.com/ifr/${videoId}?autoplay=0"
+          style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+          scrolling="no"
+          allowfullscreen
+          allow="autoplay; fullscreen"
+          sandbox="allow-scripts allow-same-origin">
+        </iframe>
       </div>
     `.trim();
   }
@@ -845,19 +807,20 @@ export class FeedService {
           // FIRST: Check for Redgifs content
           const redgifsUrl = this.extractRedgifsUrl(content);
           if (redgifsUrl) {
-            // Handle Redgifs posts
-            const redgifsVideoUrl = await this.fetchRedgifsVideoUrl(redgifsUrl);
-            if (redgifsVideoUrl) {
-              const redgifsEmbed = this.createRedgifsEmbed(redgifsVideoUrl);
-              // Remove any anchor tags wrapping Redgifs links
-              content = content.replace(/<a[^>]*href="[^"]*redgifs\.com[^"]*"[^>]*>.*?<\/a>/gi, '');
-              content = content.replace(/<a[^>]*href="[^"]*i\.redgifs\.com[^"]*"[^>]*>.*?<\/a>/gi, '');
+            // Handle Redgifs posts with iframe embed
+            const redgifsEmbed = this.createRedgifsEmbed(redgifsUrl);
+            if (redgifsEmbed) {
+              // Remove ALL anchor tags from the content to prevent clicking through
+              // This is aggressive but necessary since Reddit wraps everything in links
+              content = content.replace(/<a[^>]*>.*?<\/a>/gis, '');
+              // Also remove any remaining standalone anchor tags
+              content = content.replace(/<\/?a[^>]*>/gi, '');
               // Remove images that might be Redgifs thumbnails
               content = content.replace(/<img[^>]*src="[^"]*redgifs\.com[^"]*"[^>]*>/gi, '');
               content = content.replace(/<img[^>]*src="[^"]*external-preview\.redd\.it[^"]*"[^>]*>/gi, '');
               // Prepend the Redgifs embed to the content
               content = redgifsEmbed + '\n' + content;
-              console.log(`Embedded Redgifs video: ${redgifsUrl}`);
+              console.log(`Embedded Redgifs iframe: ${redgifsUrl}`);
             }
           } else {
             // SECOND: Check for Reddit native videos
