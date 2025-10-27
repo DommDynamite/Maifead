@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, UserPlus } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, Ticket } from 'lucide-react';
 import { useAuthStore, type SignupData } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 
@@ -202,12 +202,17 @@ export const AuthPage: React.FC = () => {
   const { login, signup, isLoading } = useAuthStore();
   const { addToast } = useToastStore();
 
-  const [mode, setMode] = useState<AuthMode>('login');
+  // Check for invite code in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const inviteCodeFromUrl = urlParams.get('invite') || '';
+
+  const [mode, setMode] = useState<AuthMode>(inviteCodeFromUrl ? 'signup' : 'login');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     username: '',
     displayName: '',
+    inviteCode: inviteCodeFromUrl,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [debugInfo, setDebugInfo] = useState<string>('');
@@ -276,6 +281,7 @@ export const AuthPage: React.FC = () => {
           password: formData.password,
           username: formData.username,
           displayName: formData.displayName,
+          inviteCode: formData.inviteCode || undefined,
         };
         console.log('Calling signup...', signupData);
         setDebugInfo('Signing up...');
@@ -404,6 +410,28 @@ export const AuthPage: React.FC = () => {
             </InputWrapper>
             {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
           </FormGroup>
+
+          {mode === 'signup' && (
+            <FormGroup>
+              <Label htmlFor="inviteCode">Invite Code (Optional)</Label>
+              <InputWrapper>
+                <InputIcon>
+                  <Ticket />
+                </InputIcon>
+                <Input
+                  id="inviteCode"
+                  type="text"
+                  placeholder="Enter invite code to skip approval"
+                  value={formData.inviteCode}
+                  onChange={e => handleInputChange('inviteCode', e.target.value)}
+                  disabled={isLoading}
+                />
+              </InputWrapper>
+              <HelperText style={{ textAlign: 'left', margin: '-8px 0 0 0', fontSize: '11px' }}>
+                If you have an invite code, your account will be activated immediately
+              </HelperText>
+            </FormGroup>
+          )}
 
           <SubmitButton type="submit" disabled={isLoading}>
             {isLoading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}

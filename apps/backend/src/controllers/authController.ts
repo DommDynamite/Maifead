@@ -11,7 +11,7 @@ export class AuthController {
    */
   static async signup(req: Request<{}, {}, SignupRequest>, res: Response) {
     try {
-      const { email, username, displayName, password } = req.body;
+      const { email, username, displayName, password, inviteCode } = req.body;
 
       // Validate input
       if (!email || !username || !displayName || !password) {
@@ -30,6 +30,43 @@ export class AuthController {
         return res.status(400).json({ error: 'Email or username already exists' });
       }
 
+      // Determine user status and role based on invite code or admin email
+      let status = 'pending';
+      let role = 'user';
+      let validInviteCodeId: string | null = null;
+
+      // Check if this email matches the admin email from environment
+      const adminEmail = process.env.ADMIN_EMAIL;
+
+      if (adminEmail && email.toLowerCase() === adminEmail.toLowerCase()) {
+        // Admin email - make them admin and active
+        status = 'active';
+        role = 'admin';
+      } else if (inviteCode) {
+        // Validate invite code
+        const invite = db.prepare(`
+          SELECT id, used_by, expires_at
+          FROM invite_codes
+          WHERE code = ?
+        `).get(inviteCode) as { id: string; used_by: string | null; expires_at: number | null } | undefined;
+
+        if (!invite) {
+          return res.status(400).json({ error: 'Invalid invite code' });
+        }
+
+        if (invite.used_by) {
+          return res.status(400).json({ error: 'Invite code has already been used' });
+        }
+
+        if (invite.expires_at && invite.expires_at < Date.now()) {
+          return res.status(400).json({ error: 'Invite code has expired' });
+        }
+
+        // Valid invite code - make user active
+        status = 'active';
+        validInviteCodeId = invite.id;
+      }
+
       // Hash password
       const passwordHash = await bcrypt.hash(password, 10);
 
@@ -38,9 +75,9 @@ export class AuthController {
       const now = Date.now();
 
       db.prepare(`
-        INSERT INTO users (id, email, username, display_name, password_hash, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(userId, email, username, displayName, passwordHash, now, now);
+        INSERT INTO users (id, email, username, display_name, password_hash, role, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(userId, email, username, displayName, passwordHash, role, status, now, now);
 
       // Create default preferences
       db.prepare(`
@@ -48,12 +85,21 @@ export class AuthController {
         VALUES (?)
       `).run(userId);
 
+      // Mark invite code as used if one was provided
+      if (validInviteCodeId) {
+        db.prepare(`
+          UPDATE invite_codes
+          SET used_by = ?, used_at = ?
+          WHERE id = ?
+        `).run(userId, now, validInviteCodeId);
+      }
+
       // Generate token
       const token = generateToken(userId);
 
       // Get created user
       const user = db.prepare(`
-        SELECT id, email, username, display_name, avatar_url, created_at
+        SELECT id, email, username, display_name, avatar_url, role, status, created_at
         FROM users WHERE id = ?
       `).get(userId) as any;
 
@@ -64,6 +110,8 @@ export class AuthController {
           username: user.username,
           displayName: user.display_name,
           avatarUrl: user.avatar_url,
+          role: user.role,
+          status: user.status,
           createdAt: new Date(user.created_at),
           updatedAt: new Date(user.created_at),
         },
@@ -90,7 +138,7 @@ export class AuthController {
 
       // Find user
       const user = db.prepare(`
-        SELECT id, email, username, display_name, password_hash, avatar_url, created_at
+        SELECT id, email, username, display_name, password_hash, avatar_url, role, status, created_at
         FROM users WHERE email = ?
       `).get(email) as any;
 
@@ -105,6 +153,15 @@ export class AuthController {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
+      // Check if user is active
+      if (user.status === 'pending') {
+        return res.status(403).json({ error: 'Account is pending approval' });
+      }
+
+      if (user.status === 'banned') {
+        return res.status(403).json({ error: 'Account has been banned' });
+      }
+
       // Generate token
       const token = generateToken(user.id);
 
@@ -115,6 +172,8 @@ export class AuthController {
           username: user.username,
           displayName: user.display_name,
           avatarUrl: user.avatar_url,
+          role: user.role,
+          status: user.status,
           createdAt: new Date(user.created_at),
           updatedAt: new Date(user.created_at),
         },
@@ -136,7 +195,7 @@ export class AuthController {
       const userId = (req as any).userId;
 
       const user = db.prepare(`
-        SELECT id, email, username, display_name, avatar_url, created_at
+        SELECT id, email, username, display_name, avatar_url, role, status, created_at
         FROM users WHERE id = ?
       `).get(userId) as any;
 
@@ -150,6 +209,8 @@ export class AuthController {
         username: user.username,
         displayName: user.display_name,
         avatarUrl: user.avatar_url,
+        role: user.role,
+        status: user.status,
         createdAt: new Date(user.created_at),
       });
     } catch (error) {
@@ -208,7 +269,7 @@ export class AuthController {
 
       // Get updated user
       const user = db.prepare(`
-        SELECT id, email, username, display_name, avatar_url, created_at
+        SELECT id, email, username, display_name, avatar_url, role, status, created_at
         FROM users WHERE id = ?
       `).get(userId) as any;
 
@@ -218,6 +279,8 @@ export class AuthController {
         username: user.username,
         displayName: user.display_name,
         avatarUrl: user.avatar_url,
+        role: user.role,
+        status: user.status,
         createdAt: new Date(user.created_at),
       });
     } catch (error) {

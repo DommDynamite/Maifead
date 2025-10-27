@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Edit2, Trash2, Save, X, AlertTriangle } from 'lucide-react';
+import { User, Mail, Edit2, Trash2, Save, X, AlertTriangle, Shield } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 
@@ -15,17 +15,56 @@ const Header = styled.div`
   margin-bottom: ${props => props.theme.spacing[8]};
 `;
 
+const HeaderTop = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: ${props => props.theme.spacing[2]};
+`;
+
+const HeaderText = styled.div`
+  flex: 1;
+`;
+
 const Title = styled.h1`
   font-size: ${props => props.theme.fontSizes['3xl']};
   font-weight: ${props => props.theme.fontWeights.bold};
   color: ${props => props.theme.colors.text};
-  margin: 0 0 ${props => props.theme.spacing[2]} 0;
+  margin: 0;
 `;
 
 const Subtitle = styled.p`
   font-size: ${props => props.theme.fontSizes.base};
   color: ${props => props.theme.colors.textSecondary};
   margin: 0;
+`;
+
+const AdminButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: ${props => props.theme.spacing[2]};
+  padding: ${props => props.theme.spacing[2]} ${props => props.theme.spacing[4]};
+  font-size: ${props => props.theme.fontSizes.sm};
+  font-weight: ${props => props.theme.fontWeights.medium};
+  color: white;
+  background: ${props => props.theme.colors.primary};
+  border: none;
+  border-radius: ${props => props.theme.borderRadius.base};
+  cursor: pointer;
+  transition: all ${props => props.theme.transitions.fast};
+
+  &:hover {
+    background: ${props => props.theme.colors.primaryHover};
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
 `;
 
 const Section = styled.section`
@@ -364,8 +403,18 @@ export const ProfilePage: React.FC = () => {
   return (
     <PageContainer>
       <Header>
-        <Title>Profile Settings</Title>
-        <Subtitle>Manage your account information and preferences</Subtitle>
+        <HeaderTop>
+          <HeaderText>
+            <Title>Profile Settings</Title>
+            <Subtitle>Manage your account information and preferences</Subtitle>
+          </HeaderText>
+          {user.role === 'admin' && (
+            <AdminButton onClick={() => navigate('/admin')}>
+              <Shield />
+              Admin Panel
+            </AdminButton>
+          )}
+        </HeaderTop>
       </Header>
 
       <Section>

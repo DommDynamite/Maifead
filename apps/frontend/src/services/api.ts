@@ -213,6 +213,46 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Admin endpoints
+  async getUsers() {
+    return this.request<{ users: any[] }>('/admin/users');
+  }
+
+  async approveUser(userId: string) {
+    return this.request<{ message: string }>(`/admin/users/${userId}/approve`, {
+      method: 'POST',
+    });
+  }
+
+  async banUser(userId: string) {
+    return this.request<{ message: string }>(`/admin/users/${userId}/ban`, {
+      method: 'POST',
+    });
+  }
+
+  async unbanUser(userId: string) {
+    return this.request<{ message: string }>(`/admin/users/${userId}/unban`, {
+      method: 'POST',
+    });
+  }
+
+  async getInviteCodes() {
+    return this.request<{ inviteCodes: any[] }>('/admin/invite-codes');
+  }
+
+  async generateInviteCode(expiresInDays?: number) {
+    return this.request<{ inviteCode: any }>('/admin/invite-codes', {
+      method: 'POST',
+      body: JSON.stringify({ expiresInDays }),
+    });
+  }
+
+  async deleteInviteCode(codeId: string) {
+    return this.request<{ message: string }>(`/admin/invite-codes/${codeId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const api = new ApiClient();

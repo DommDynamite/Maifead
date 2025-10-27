@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import type BetterSqlite3 from 'better-sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -8,7 +9,7 @@ const __dirname = dirname(__filename);
 
 const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../../data/maifead.db');
 
-export const db = new Database(dbPath, { verbose: console.log });
+export const db: BetterSqlite3.Database = new Database(dbPath, { verbose: console.log });
 
 // Enable foreign keys
 db.pragma('foreign_keys = ON');
@@ -23,6 +24,8 @@ export const initializeDatabase = () => {
       display_name TEXT NOT NULL,
       password_hash TEXT NOT NULL,
       avatar_url TEXT,
+      role TEXT DEFAULT 'user',
+      status TEXT DEFAULT 'pending',
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     )
@@ -113,6 +116,53 @@ export const initializeDatabase = () => {
   } catch (error) {
     // Column already exists, ignore error
   }
+
+  // Add Bluesky-specific columns
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN bluesky_handle TEXT`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN bluesky_did TEXT`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN bluesky_feed_uri TEXT`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
+  // Add user role and status columns for admin management
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
+  // Invite codes table for pre-approved signups
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS invite_codes (
+      id TEXT PRIMARY KEY,
+      code TEXT UNIQUE NOT NULL,
+      created_by TEXT NOT NULL,
+      used_by TEXT,
+      created_at INTEGER NOT NULL,
+      used_at INTEGER,
+      expires_at INTEGER,
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (used_by) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
 
   // Feed items table
   db.exec(`

@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js';
 import sourcesRoutes from './routes/sources.js';
 import feedItemsRoutes from './routes/feedItems.js';
 import collectionsRoutes from './routes/collections.js';
+import adminRoutes from './routes/admin.js';
 
 // Load environment variables
 dotenv.config();
@@ -32,6 +33,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/sources', sourcesRoutes);
 app.use('/api/feed-items', feedItemsRoutes);
 app.use('/api/collections', collectionsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -8,6 +8,8 @@ export interface User {
   username: string;
   displayName: string;
   avatarUrl?: string;
+  role: 'admin' | 'user';
+  status: 'active' | 'pending' | 'banned';
   createdAt: Date;
 }
 
@@ -29,6 +31,7 @@ export interface SignupData {
   username: string;
   displayName: string;
   password: string;
+  inviteCode?: string;
 }
 
 export const useAuthStore = create<AuthStore>()(

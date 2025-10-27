@@ -6,6 +6,7 @@ import { FeedView } from './pages/FeedView';
 import { SourcesPage } from './pages/SourcesPage';
 import { AuthPage } from './pages/AuthPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { AdminPage } from './pages/AdminPage';
 import { IconRail } from './components/Navigation/IconRail';
 import { BottomNav } from './components/Navigation/BottomNav';
 import { FeadsPanel } from './components/Navigation/FeadsPanel';
@@ -136,6 +137,16 @@ function AppContent() {
           element={
             <Layout>
               <ProfilePage />
+            </Layout>
+          }
+        />
+
+        {/* Admin panel page */}
+        <Route
+          path="/admin"
+          element={
+            <Layout>
+              <AdminPage />
             </Layout>
           }
         />
