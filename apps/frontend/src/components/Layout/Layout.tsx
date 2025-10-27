@@ -19,6 +19,7 @@ const LayoutContainer = styled.div`
 
   @media (max-width: ${props => props.theme.breakpoints.md}) {
     padding-left: 0; // No icon rail on mobile
+    padding-bottom: calc(60px + env(safe-area-inset-bottom)); // Space for bottom nav + iOS safe area
   }
 `;
 

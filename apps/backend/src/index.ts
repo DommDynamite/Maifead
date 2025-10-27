@@ -59,8 +59,8 @@ cron.schedule(fetchInterval, async () => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server - listen on all network interfaces for mobile access
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Feed fetch scheduled: ${fetchInterval}`);
 });

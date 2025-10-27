@@ -1,4 +1,15 @@
-const API_URL = 'http://localhost:3001/api';
+// Use the local network IP for mobile access, fallback to localhost for desktop
+const getApiUrl = () => {
+  // Try to detect if we're on mobile by checking if we're accessing via a network IP
+  const hostname = window.location.hostname;
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    // We're accessing via network IP, use the same IP for the backend
+    return `http://${hostname}:3001/api`;
+  }
+  return 'http://localhost:3001/api';
+};
+
+const API_URL = getApiUrl();
 
 class ApiClient {
   private token: string | null = null;

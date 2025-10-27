@@ -210,6 +210,7 @@ export const AuthPage: React.FC = () => {
     displayName: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -249,13 +250,26 @@ export const AuthPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setDebugInfo('Form submitted!');
+    console.log('Form submitted', { mode, formData });
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      setDebugInfo(`Validation failed: ${JSON.stringify(errors)}`);
+      console.log('Form validation failed', errors);
+      return;
+    }
+
+    setDebugInfo('Validation passed, calling API...');
+    console.log('Form validation passed, attempting authentication...');
 
     try {
       if (mode === 'login') {
+        console.log('Calling login...', formData.email);
+        setDebugInfo(`Logging in as ${formData.email}...`);
         await login(formData.email, formData.password);
-        addToast('Welcome back!', 'success');
+        console.log('Login successful');
+        setDebugInfo('Login successful!');
+        addToast('success', 'Welcome back!');
       } else {
         const signupData: SignupData = {
           email: formData.email,
@@ -263,12 +277,19 @@ export const AuthPage: React.FC = () => {
           username: formData.username,
           displayName: formData.displayName,
         };
+        console.log('Calling signup...', signupData);
+        setDebugInfo('Signing up...');
         await signup(signupData);
-        addToast('Account created successfully!', 'success');
+        console.log('Signup successful');
+        setDebugInfo('Signup successful!');
+        addToast('success', 'Account created successfully!');
       }
       navigate('/');
     } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Authentication failed', 'error');
+      console.error('Authentication error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Authentication failed';
+      setDebugInfo(`ERROR: ${errorMsg}`);
+      addToast('error', errorMsg);
     }
   };
 
@@ -303,6 +324,11 @@ export const AuthPage: React.FC = () => {
         </TabContainer>
 
         <Form onSubmit={handleSubmit}>
+          {debugInfo && (
+            <div style={{ padding: '12px', background: '#ff6b6b', color: 'white', borderRadius: '4px', marginBottom: '16px', fontSize: '14px', wordBreak: 'break-word' }}>
+              DEBUG: {debugInfo}
+            </div>
+          )}
           {mode === 'signup' && (
             <>
               <FormGroup>
