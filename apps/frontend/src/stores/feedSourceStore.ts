@@ -30,7 +30,6 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
           icon: s.iconUrl,
           type: s.type || 'rss',
           channelId: s.channelId,
-          category: s.category,
           isEnabled: true,
           whitelistKeywords: s.whitelistKeywords || [],
           blacklistKeywords: s.blacklistKeywords || [],
@@ -56,7 +55,6 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
         redditUsername: input.redditUsername,
         redditSourceType: input.redditSourceType,
         youtubeShortsFilter: input.youtubeShortsFilter,
-        category: input.category,
       });
 
       const newSource: FeedSource = {
@@ -66,7 +64,6 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
         icon: source.iconUrl,
         type: source.type || 'rss',
         channelId: source.channelId,
-        category: source.category,
         isEnabled: true,
         whitelistKeywords: [],
         blacklistKeywords: [],
@@ -89,7 +86,6 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
     try {
       const updated = await api.updateSource(id, {
         name: updates.name,
-        category: updates.category,
         youtubeShortsFilter: updates.youtubeShortsFilter,
         whitelistKeywords: updates.whitelistKeywords,
         blacklistKeywords: updates.blacklistKeywords,
@@ -101,7 +97,6 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
             ? {
                 ...source,
                 name: updated.name,
-                category: updated.category,
                 whitelistKeywords: updated.whitelistKeywords || [],
                 blacklistKeywords: updated.blacklistKeywords || [],
                 updatedAt: new Date(updated.updatedAt),

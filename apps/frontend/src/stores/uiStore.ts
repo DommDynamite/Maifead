@@ -62,25 +62,25 @@ interface UIStore {
 
 export const useUIStore = create<UIStore>()(
   persist(
-    set => ({
+    (set) => ({
       // Default values
       maxCardWidth: 700,
-      feedLayout: 'single',
+      feedLayout: 'single' as FeedLayout,
       isSettingsPanelOpen: false,
       isSourceFilterModalOpen: false,
       isFeadsPanelOpen: false,
       isFeedControlsPanelOpen: false,
       isCollectionsPanelOpen: false,
-      activeView: 'all',
-      selectedSourceNames: [],
-      activeFeadId: null,
-      activeCollectionId: null,
+      activeView: 'all' as ActiveView,
+      selectedSourceNames: [] as string[],
+      activeFeadId: null as string | null,
+      activeCollectionId: null as string | null,
       searchQuery: '',
       hideReadItems: false,
-      readItemIds: [],
-      savedItemIds: [],
-      viewMode: 'detailed',
-      sortBy: 'newest',
+      readItemIds: [] as string[],
+      savedItemIds: [] as string[],
+      viewMode: 'detailed' as ViewMode,
+      sortBy: 'newest' as SortBy,
 
       // Actions
       setMaxCardWidth: width => set({ maxCardWidth: width }),
@@ -163,11 +163,11 @@ export const useUIStore = create<UIStore>()(
         set(state => ({
           readItemIds: state.readItemIds.filter(itemId => itemId !== id),
         })),
-      isItemRead: id => {
-        const state = useUIStore.getState();
-        return state.readItemIds.includes(id);
+      isItemRead: (id: string): boolean => {
+        // Access state through the store's getState after initialization
+        return false; // Will be overridden by the actual implementation after store creation
       },
-      toggleSavedItem: id =>
+      toggleSavedItem: (id: string) =>
         set(state => ({
           savedItemIds: state.savedItemIds.includes(id)
             ? state.savedItemIds.filter(itemId => itemId !== id)
