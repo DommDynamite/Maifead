@@ -8,7 +8,7 @@ import {
   getInviteCodes,
   generateInviteCode,
   deleteInviteCode,
-} from '../controllers/adminController';
+} from '../controllers/adminController.js';
 
 const router: RouterType = Router();
 
