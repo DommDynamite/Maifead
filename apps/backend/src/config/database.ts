@@ -5,11 +5,16 @@ import type BetterSqlite3 from 'better-sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { mkdirSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../../data/maifead.db');
+
+// Ensure the database directory exists
+const dbDir = dirname(dbPath);
+mkdirSync(dbDir, { recursive: true });
 
 export const db: BetterSqlite3.Database = new Database(dbPath, { verbose: console.log });
 
