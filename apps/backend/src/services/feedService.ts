@@ -367,7 +367,7 @@ export class FeedService {
         return { images: [] };
       }
 
-      const post = threadResult.data.thread.post;
+      const post = (threadResult.data.thread as any).post;
       const images: string[] = [];
       let embedHtml: string | undefined;
 

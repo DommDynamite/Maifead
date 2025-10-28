@@ -18,7 +18,7 @@ export interface UserPreferences {
   feedLayout: 'single' | 'double' | 'triple';
 }
 
-export type SourceType = 'rss' | 'youtube' | 'reddit';
+export type SourceType = 'rss' | 'youtube' | 'reddit' | 'bluesky';
 export type YoutubeShortsFilter = 'all' | 'exclude' | 'only';
 export type RedditSourceType = 'subreddit' | 'user';
 
@@ -33,6 +33,9 @@ export interface Source {
   redditUsername?: string; // Reddit username
   redditSourceType?: RedditSourceType; // Whether Reddit source is subreddit or user
   youtubeShortsFilter?: YoutubeShortsFilter; // YouTube shorts filtering
+  blueskyHandle?: string; // Bluesky handle (e.g., user.bsky.social)
+  blueskyDid?: string; // Bluesky DID (Decentralized Identifier)
+  blueskyFeedUri?: string; // Custom Bluesky feed URI
   iconUrl?: string;
   description?: string;
   category?: string;
@@ -103,6 +106,9 @@ export interface CreateSourceRequest {
   redditUsername?: string;
   redditSourceType?: RedditSourceType;
   youtubeShortsFilter?: YoutubeShortsFilter;
+  blueskyHandle?: string;
+  blueskyDid?: string;
+  blueskyFeedUri?: string;
   category?: string;
   whitelistKeywords?: string[];
   blacklistKeywords?: string[];
