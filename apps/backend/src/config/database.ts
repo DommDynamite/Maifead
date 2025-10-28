@@ -209,6 +209,30 @@ export const initializeDatabase = () => {
     )
   `);
 
+  // Feads table (custom feed presets)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS feads (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      icon TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Fead sources junction table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS fead_sources (
+      fead_id TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      PRIMARY KEY (fead_id, source_id),
+      FOREIGN KEY (fead_id) REFERENCES feads(id) ON DELETE CASCADE,
+      FOREIGN KEY (source_id) REFERENCES sources(id) ON DELETE CASCADE
+    )
+  `);
+
   // Create indexes for performance
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_feed_items_source_id ON feed_items(source_id);
@@ -218,6 +242,8 @@ export const initializeDatabase = () => {
     CREATE INDEX IF NOT EXISTS idx_sources_user_id ON sources(user_id);
     CREATE INDEX IF NOT EXISTS idx_collections_user_id ON collections(user_id);
     CREATE INDEX IF NOT EXISTS idx_collection_items_feed_item_id ON collection_items(feed_item_id);
+    CREATE INDEX IF NOT EXISTS idx_feads_user_id ON feads(user_id);
+    CREATE INDEX IF NOT EXISTS idx_fead_sources_source_id ON fead_sources(source_id);
   `);
 
   console.log('Database initialized successfully');

@@ -19,7 +19,7 @@ const Backdrop = styled(motion.div)`
 
 const Panel = styled(motion.aside)`
   position: fixed;
-  left: 64px;
+  left: 0;
   top: 0;
   height: 100vh;
   width: 280px;
@@ -31,7 +31,6 @@ const Panel = styled(motion.aside)`
   flex-direction: column;
 
   @media (max-width: ${props => props.theme.breakpoints.md}) {
-    left: 0;
     width: 100%;
     max-width: 320px;
   }
@@ -267,9 +266,9 @@ export const CollectionsPanel: React.FC<CollectionsPanelProps> = ({
             onClick={handleBackdropClick}
           />
           <Panel
-            initial={{ x: -344 }}
+            initial={{ x: -280 }}
             animate={{ x: 0 }}
-            exit={{ x: -344 }}
+            exit={{ x: -280 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           >
             <Header>

@@ -15,11 +15,11 @@ export class CollectionsController {
         SELECT * FROM collections WHERE user_id = ? ORDER BY created_at DESC
       `).all(userId) as any[];
 
-      // Get item counts for each collection
-      const collectionsWithCounts = collections.map(c => {
-        const count = db.prepare(
-          'SELECT COUNT(*) as count FROM collection_items WHERE collection_id = ?'
-        ).get(c.id) as any;
+      // Get item IDs for each collection
+      const collectionsWithItems = collections.map(c => {
+        const items = db.prepare(
+          'SELECT feed_item_id FROM collection_items WHERE collection_id = ?'
+        ).all(c.id) as any[];
 
         return {
           id: c.id,
@@ -27,13 +27,13 @@ export class CollectionsController {
           name: c.name,
           color: c.color,
           icon: c.icon,
-          itemCount: count.count,
+          itemIds: items.map(item => item.feed_item_id),
           createdAt: new Date(c.created_at),
           updatedAt: new Date(c.updated_at),
         };
       });
 
-      res.json(collectionsWithCounts);
+      res.json(collectionsWithItems);
     } catch (error) {
       console.error('Get collections error:', error);
       res.status(500).json({ error: 'Failed to get collections' });

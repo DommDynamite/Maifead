@@ -22,6 +22,19 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
       req.userId = decoded.userId;
+
+      // Check if user exists and is active
+      const user = db.prepare('SELECT status, role FROM users WHERE id = ?').get(req.userId) as { status: string; role: string } | undefined;
+
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      if (user.status !== 'active') {
+        return res.status(403).json({ error: 'Account pending approval. Please wait for an admin to approve your account.' });
+      }
+
+      req.userRole = user.role;
       next();
     } catch (error) {
       return res.status(401).json({ error: 'Invalid or expired token' });

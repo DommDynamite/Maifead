@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Edit2, Trash2, Save, X, AlertTriangle, Shield } from 'lucide-react';
+import { User, Mail, Edit2, Trash2, Save, X, AlertTriangle, Shield, LogOut } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
 
@@ -400,6 +400,12 @@ export const ProfilePage: React.FC = () => {
     navigate('/auth');
   };
 
+  const handleLogout = () => {
+    logout();
+    addToast('Signed out successfully', 'info');
+    navigate('/auth');
+  };
+
   return (
     <PageContainer>
       <Header>
@@ -505,6 +511,16 @@ export const ProfilePage: React.FC = () => {
             </Button>
           </ButtonGroup>
         )}
+      </Section>
+
+      <Section>
+        <SectionHeader>
+          <SectionTitle>Account Actions</SectionTitle>
+        </SectionHeader>
+        <Button $variant="secondary" onClick={handleLogout}>
+          <LogOut />
+          Sign Out
+        </Button>
       </Section>
 
       <Section>

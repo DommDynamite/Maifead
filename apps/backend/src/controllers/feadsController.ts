@@ -1,0 +1,271 @@
+import { Request, Response } from 'express';
+import { db } from '../config/database.js';
+import { v4 as uuidv4 } from 'uuid';
+
+interface AuthRequest extends Request {
+  userId?: string;
+}
+
+/**
+ * Get all feads for the authenticated user
+ */
+export const getFeads = (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Get all feads for the user
+    const feads = db
+      .prepare(
+        `SELECT id, name, icon, created_at, updated_at
+         FROM feads
+         WHERE user_id = ?
+         ORDER BY created_at DESC`
+      )
+      .all(userId);
+
+    // For each fead, get its source IDs
+    const feadsWithSources = feads.map((fead: any) => {
+      const sourceIds = db
+        .prepare(
+          `SELECT source_id FROM fead_sources WHERE fead_id = ?`
+        )
+        .all(fead.id)
+        .map((row: any) => row.source_id);
+
+      return {
+        id: fead.id,
+        name: fead.name,
+        icon: fead.icon,
+        sourceIds,
+        createdAt: fead.created_at,
+        updatedAt: fead.updated_at,
+      };
+    });
+
+    res.json(feadsWithSources);
+  } catch (error) {
+    console.error('Error fetching feads:', error);
+    res.status(500).json({ error: 'Failed to fetch feads' });
+  }
+};
+
+/**
+ * Get a single fead by ID
+ */
+export const getFead = (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Get the fead
+    const fead = db
+      .prepare(
+        `SELECT id, name, icon, created_at, updated_at
+         FROM feads
+         WHERE id = ? AND user_id = ?`
+      )
+      .get(id, userId) as any;
+
+    if (!fead) {
+      return res.status(404).json({ error: 'Fead not found' });
+    }
+
+    // Get source IDs
+    const sourceIds = db
+      .prepare(`SELECT source_id FROM fead_sources WHERE fead_id = ?`)
+      .all(id)
+      .map((row: any) => row.source_id);
+
+    res.json({
+      id: fead.id,
+      name: fead.name,
+      icon: fead.icon,
+      sourceIds,
+      createdAt: fead.created_at,
+      updatedAt: fead.updated_at,
+    });
+  } catch (error) {
+    console.error('Error fetching fead:', error);
+    res.status(500).json({ error: 'Failed to fetch fead' });
+  }
+};
+
+/**
+ * Create a new fead
+ */
+export const createFead = (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { name, icon, sourceIds } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!name || !icon) {
+      return res.status(400).json({ error: 'Name and icon are required' });
+    }
+
+    const feadId = uuidv4();
+    const now = Date.now();
+
+    // Insert fead
+    db.prepare(
+      `INSERT INTO feads (id, user_id, name, icon, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(feadId, userId, name, icon, now, now);
+
+    // Insert source associations
+    if (sourceIds && Array.isArray(sourceIds) && sourceIds.length > 0) {
+      const insertSource = db.prepare(
+        `INSERT INTO fead_sources (fead_id, source_id) VALUES (?, ?)`
+      );
+
+      for (const sourceId of sourceIds) {
+        insertSource.run(feadId, sourceId);
+      }
+    }
+
+    res.status(201).json({
+      id: feadId,
+      name,
+      icon,
+      sourceIds: sourceIds || [],
+      createdAt: now,
+      updatedAt: now,
+    });
+  } catch (error) {
+    console.error('Error creating fead:', error);
+    res.status(500).json({ error: 'Failed to create fead' });
+  }
+};
+
+/**
+ * Update a fead
+ */
+export const updateFead = (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { id } = req.params;
+    const { name, icon, sourceIds } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Check if fead exists and belongs to user
+    const existing = db
+      .prepare(`SELECT id FROM feads WHERE id = ? AND user_id = ?`)
+      .get(id, userId);
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Fead not found' });
+    }
+
+    const now = Date.now();
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (name !== undefined) {
+      updates.push('name = ?');
+      values.push(name);
+    }
+
+    if (icon !== undefined) {
+      updates.push('icon = ?');
+      values.push(icon);
+    }
+
+    updates.push('updated_at = ?');
+    values.push(now);
+
+    // Update fead
+    if (updates.length > 0) {
+      values.push(id, userId);
+      db.prepare(
+        `UPDATE feads SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`
+      ).run(...values);
+    }
+
+    // Update source associations if provided
+    if (sourceIds && Array.isArray(sourceIds)) {
+      // Delete existing associations
+      db.prepare(`DELETE FROM fead_sources WHERE fead_id = ?`).run(id);
+
+      // Insert new associations
+      if (sourceIds.length > 0) {
+        const insertSource = db.prepare(
+          `INSERT INTO fead_sources (fead_id, source_id) VALUES (?, ?)`
+        );
+
+        for (const sourceId of sourceIds) {
+          insertSource.run(id, sourceId);
+        }
+      }
+    }
+
+    // Fetch updated fead
+    const updated = db
+      .prepare(
+        `SELECT id, name, icon, created_at, updated_at
+         FROM feads
+         WHERE id = ? AND user_id = ?`
+      )
+      .get(id, userId) as any;
+
+    const updatedSourceIds = db
+      .prepare(`SELECT source_id FROM fead_sources WHERE fead_id = ?`)
+      .all(id)
+      .map((row: any) => row.source_id);
+
+    res.json({
+      id: updated.id,
+      name: updated.name,
+      icon: updated.icon,
+      sourceIds: updatedSourceIds,
+      createdAt: updated.created_at,
+      updatedAt: updated.updated_at,
+    });
+  } catch (error) {
+    console.error('Error updating fead:', error);
+    res.status(500).json({ error: 'Failed to update fead' });
+  }
+};
+
+/**
+ * Delete a fead
+ */
+export const deleteFead = (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Check if fead exists and belongs to user
+    const existing = db
+      .prepare(`SELECT id FROM feads WHERE id = ? AND user_id = ?`)
+      .get(id, userId);
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Fead not found' });
+    }
+
+    // Delete fead (cascade will handle fead_sources)
+    db.prepare(`DELETE FROM feads WHERE id = ? AND user_id = ?`).run(id, userId);
+
+    res.json({ message: 'Fead deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting fead:', error);
+    res.status(500).json({ error: 'Failed to delete fead' });
+  }
+};

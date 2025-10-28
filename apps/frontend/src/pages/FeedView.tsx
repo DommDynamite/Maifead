@@ -144,6 +144,7 @@ export const FeedView: React.FC = () => {
 
       return {
         id: item.id,
+        sourceId: item.sourceId, // Preserve sourceId for filtering
         title: item.title,
         source: {
           type: source?.type || 'rss',
@@ -169,7 +170,7 @@ export const FeedView: React.FC = () => {
         isRead: item.read,
         isSaved: item.saved,
         tags: [],
-      };
+      } as ContentItem & { sourceId: string };
     });
   }, [feedItems, sources]);
 
@@ -187,7 +188,7 @@ export const FeedView: React.FC = () => {
       const { feads } = useFeadStore.getState();
       const activeFead = feads.find(f => f.id === activeFeadId);
       if (activeFead) {
-        items = items.filter(item => activeFead.sourceNames.includes(item.source.name));
+        items = items.filter(item => activeFead.sourceIds.includes((item as any).sourceId));
       }
     } else if (activeView === 'collection' && activeCollectionId) {
       const activeCollection = collections.find(c => c.id === activeCollectionId);

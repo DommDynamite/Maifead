@@ -214,6 +214,35 @@ class ApiClient {
     });
   }
 
+  // Feads endpoints
+  async getFeads() {
+    return this.request<any[]>('/feads');
+  }
+
+  async getFead(id: string) {
+    return this.request<any>(`/feads/${id}`);
+  }
+
+  async createFead(data: { name: string; icon: string; sourceIds: string[] }) {
+    return this.request<any>('/feads', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateFead(id: string, data: { name?: string; icon?: string; sourceIds?: string[] }) {
+    return this.request<any>(`/feads/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteFead(id: string) {
+    return this.request<{ message: string }>(`/feads/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Admin endpoints
   async getUsers() {
     return this.request<{ users: any[] }>('/admin/users');

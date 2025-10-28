@@ -137,6 +137,14 @@ const Table = styled.div`
   border: 1px solid ${props => props.theme.colors.border};
   border-radius: ${props => props.theme.borderRadius.lg};
   overflow: hidden;
+
+  @media (max-width: ${props => props.theme.breakpoints.md}) {
+    border: none;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    gap: ${props => props.theme.spacing[3]};
+  }
 `;
 
 const TableHeader = styled.div`
@@ -151,6 +159,10 @@ const TableHeader = styled.div`
   color: ${props => props.theme.colors.textSecondary};
   text-transform: uppercase;
   letter-spacing: 0.05em;
+
+  @media (max-width: ${props => props.theme.breakpoints.md}) {
+    display: none;
+  }
 `;
 
 const TableRow = styled.div`
@@ -168,6 +180,18 @@ const TableRow = styled.div`
 
   &:hover {
     background: ${props => props.theme.colors.surfaceHover};
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.md}) {
+    display: block;
+    padding: ${props => props.theme.spacing[4]};
+    background: ${props => props.theme.colors.surface};
+    border: 1px solid ${props => props.theme.colors.border};
+    border-radius: ${props => props.theme.borderRadius.lg};
+
+    &:hover {
+      background: ${props => props.theme.colors.surface};
+    }
   }
 `;
 
@@ -377,6 +401,65 @@ const EmptyState = styled.div`
   }
 `;
 
+// Mobile card layout components
+const MobileCard = styled.div`
+  display: none;
+
+  @media (max-width: ${props => props.theme.breakpoints.md}) {
+    display: block;
+  }
+`;
+
+const MobileCardHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${props => props.theme.spacing[3]};
+  margin-bottom: ${props => props.theme.spacing[3]};
+  padding-bottom: ${props => props.theme.spacing[3]};
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+`;
+
+const MobileCardTitle = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const MobileCardBody = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${props => props.theme.spacing[3]};
+  margin-bottom: ${props => props.theme.spacing[3]};
+`;
+
+const MobileRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: ${props => props.theme.spacing[2]};
+`;
+
+const MobileLabel = styled.div`
+  font-size: ${props => props.theme.fontSizes.xs};
+  font-weight: ${props => props.theme.fontWeights.semibold};
+  color: ${props => props.theme.colors.textSecondary};
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+`;
+
+const MobileValue = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${props => props.theme.spacing[2]};
+`;
+
+const DesktopOnly = styled.div`
+  display: contents; /* This allows grid layout to work on desktop */
+
+  @media (max-width: ${props => props.theme.breakpoints.md}) {
+    display: none;
+  }
+`;
+
 export const SourcesPage: React.FC = () => {
   const navigate = useNavigate();
   const { sources, deleteSource, refreshSource } = useFeedSourceStore();
@@ -489,57 +572,135 @@ export const SourcesPage: React.FC = () => {
 
               return (
                 <TableRow key={source.id}>
-                  <div>
-                    {source.icon ? (
-                      <Icon src={source.icon} alt={source.name} />
-                    ) : (
-                      <IconPlaceholder>{source.name[0].toUpperCase()}</IconPlaceholder>
-                    )}
-                  </div>
+                  {/* Desktop table layout - wrapped to hide on mobile */}
+                  <DesktopOnly>
+                    <div>
+                      {source.icon ? (
+                        <Icon src={source.icon} alt={source.name} />
+                      ) : (
+                        <IconPlaceholder>{source.name[0].toUpperCase()}</IconPlaceholder>
+                      )}
+                    </div>
 
-                  <SourceName>{source.name}</SourceName>
+                    <SourceName>{source.name}</SourceName>
 
-                  <SourceUrl title={source.url}>{source.url}</SourceUrl>
+                    <SourceUrl title={source.url}>{source.url}</SourceUrl>
 
-                  <div>
-                    <TypeBadge $type={source.type}>{source.type}</TypeBadge>
-                  </div>
+                    <div>
+                      <TypeBadge $type={source.type}>{source.type}</TypeBadge>
+                    </div>
 
-                  <div>
-                    {filterCount > 0 ? (
-                      <FilterBadge>
-                        <Filter />
-                        {filterCount}
-                      </FilterBadge>
-                    ) : (
-                      <NoFilters>None</NoFilters>
-                    )}
-                  </div>
+                    <div>
+                      {filterCount > 0 ? (
+                        <FilterBadge>
+                          <Filter />
+                          {filterCount}
+                        </FilterBadge>
+                      ) : (
+                        <NoFilters>None</NoFilters>
+                      )}
+                    </div>
 
-                  <ItemCount>{itemCount}</ItemCount>
+                    <ItemCount>{itemCount}</ItemCount>
 
-                  <StatusBadge $enabled={source.isEnabled}>
-                    {source.isEnabled ? <CheckCircle /> : <XCircle />}
-                    {source.isEnabled ? 'Active' : 'Disabled'}
-                  </StatusBadge>
+                    <StatusBadge $enabled={source.isEnabled}>
+                      {source.isEnabled ? <CheckCircle /> : <XCircle />}
+                      {source.isEnabled ? 'Active' : 'Disabled'}
+                    </StatusBadge>
 
-                  <Actions>
-                    <ActionButton
-                      $variant="refresh"
-                      $isRefreshing={refreshingSourceId === source.id}
-                      onClick={() => handleRefresh(source)}
-                      disabled={refreshingSourceId === source.id}
-                      title="Refresh source"
-                    >
-                      <RefreshCw />
-                    </ActionButton>
-                    <ActionButton $variant="edit" onClick={() => handleEdit(source)} title="Edit source">
-                      <Edit2 />
-                    </ActionButton>
-                    <ActionButton $variant="delete" onClick={() => handleDelete(source)} title="Delete source">
-                      <Trash2 />
-                    </ActionButton>
-                  </Actions>
+                    <Actions>
+                      <ActionButton
+                        $variant="refresh"
+                        $isRefreshing={refreshingSourceId === source.id}
+                        onClick={() => handleRefresh(source)}
+                        disabled={refreshingSourceId === source.id}
+                        title="Refresh source"
+                      >
+                        <RefreshCw />
+                      </ActionButton>
+                      <ActionButton $variant="edit" onClick={() => handleEdit(source)} title="Edit source">
+                        <Edit2 />
+                      </ActionButton>
+                      <ActionButton $variant="delete" onClick={() => handleDelete(source)} title="Delete source">
+                        <Trash2 />
+                      </ActionButton>
+                    </Actions>
+                  </DesktopOnly>
+
+                  {/* Mobile card layout */}
+                  <MobileCard>
+                    <MobileCardHeader>
+                      {source.icon ? (
+                        <Icon src={source.icon} alt={source.name} />
+                      ) : (
+                        <IconPlaceholder>{source.name[0].toUpperCase()}</IconPlaceholder>
+                      )}
+                      <MobileCardTitle>
+                        <SourceName>{source.name}</SourceName>
+                        <TypeBadge $type={source.type} style={{ marginTop: '4px' }}>
+                          {source.type}
+                        </TypeBadge>
+                      </MobileCardTitle>
+                    </MobileCardHeader>
+
+                    <MobileCardBody>
+                      <MobileRow>
+                        <MobileLabel>URL</MobileLabel>
+                        <MobileValue>
+                          <SourceUrl title={source.url}>{source.url}</SourceUrl>
+                        </MobileValue>
+                      </MobileRow>
+
+                      <MobileRow>
+                        <MobileLabel>Filters</MobileLabel>
+                        <MobileValue>
+                          {filterCount > 0 ? (
+                            <FilterBadge>
+                              <Filter />
+                              {filterCount}
+                            </FilterBadge>
+                          ) : (
+                            <NoFilters>None</NoFilters>
+                          )}
+                        </MobileValue>
+                      </MobileRow>
+
+                      <MobileRow>
+                        <MobileLabel>Items</MobileLabel>
+                        <MobileValue>
+                          <ItemCount>{itemCount}</ItemCount>
+                        </MobileValue>
+                      </MobileRow>
+
+                      <MobileRow>
+                        <MobileLabel>Status</MobileLabel>
+                        <MobileValue>
+                          <StatusBadge $enabled={source.isEnabled}>
+                            {source.isEnabled ? <CheckCircle /> : <XCircle />}
+                            {source.isEnabled ? 'Active' : 'Disabled'}
+                          </StatusBadge>
+                        </MobileValue>
+                      </MobileRow>
+                    </MobileCardBody>
+
+                    <Actions>
+                      <ActionButton
+                        $variant="refresh"
+                        $isRefreshing={refreshingSourceId === source.id}
+                        onClick={() => handleRefresh(source)}
+                        disabled={refreshingSourceId === source.id}
+                        title="Refresh source"
+                      >
+                        <RefreshCw />
+                      </ActionButton>
+                      <ActionButton $variant="edit" onClick={() => handleEdit(source)} title="Edit source">
+                        <Edit2 />
+                      </ActionButton>
+                      <ActionButton $variant="delete" onClick={() => handleDelete(source)} title="Delete source">
+                        <Trash2 />
+                      </ActionButton>
+                    </Actions>
+                  </MobileCard>
                 </TableRow>
               );
             })}

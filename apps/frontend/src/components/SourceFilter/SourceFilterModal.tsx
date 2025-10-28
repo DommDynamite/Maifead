@@ -252,7 +252,7 @@ export const SourceFilterModal: React.FC = () => {
       const activeFead = feads.find(f => f.id === activeFeadId);
       if (activeFead) {
         // Only return sources that are part of this fead
-        return feedSources.filter(source => activeFead.sourceNames.includes(source.name));
+        return feedSources.filter(source => activeFead.sourceIds.includes(source.id));
       }
     }
     // For 'all', 'collection', and 'sources' views, show all sources

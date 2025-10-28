@@ -21,17 +21,17 @@ import { useCollectionStore } from './stores/collectionStore';
 import { useFeedStore } from './stores/feedStore';
 import { useFeadStore } from './stores/feadStore';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import type { FeadWithNames } from '@maifead/types';
+import type { Fead } from '@maifead/types';
 
 function AppContent() {
   const { initialize, isAuthenticated } = useAuthStore();
   const { fetchSources } = useFeedSourceStore();
   const { fetchCollections } = useCollectionStore();
+  const { fetchFeads, createFead, updateFead } = useFeadStore();
   const { fetchItems } = useFeedStore();
-  const { createFead, updateFead } = useFeadStore();
 
   const [isFeadModalOpen, setIsFeadModalOpen] = useState(false);
-  const [editingFead, setEditingFead] = useState<FeadWithNames | null>(null);
+  const [editingFead, setEditingFead] = useState<Fead | null>(null);
 
   // Register service worker for PWA functionality
   useRegisterSW({
@@ -52,20 +52,22 @@ function AppContent() {
       // Clear old persisted sources data (migration from POC)
       localStorage.removeItem('maifead-feed-sources');
       localStorage.removeItem('maifead-collections');
+      localStorage.removeItem('maifead-feads'); // Clear old localStorage Feads
 
       await initialize();
     };
     initApp();
   }, [initialize]);
 
-  // Fetch sources, collections, and feed items when authenticated
+  // Fetch sources, collections, feads, and feed items when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       fetchSources();
       fetchCollections();
+      fetchFeads();
       fetchItems({ limit: 500 }); // Increased to handle multiple sources
     }
-  }, [isAuthenticated, fetchSources, fetchCollections, fetchItems]);
+  }, [isAuthenticated, fetchSources, fetchCollections, fetchFeads, fetchItems]);
 
   const feedItems = useFeedStore(state => state.items);
 
@@ -74,12 +76,12 @@ function AppContent() {
     setIsFeadModalOpen(true);
   };
 
-  const handleEditFead = (fead: FeadWithNames) => {
+  const handleEditFead = (fead: Fead) => {
     setEditingFead(fead);
     setIsFeadModalOpen(true);
   };
 
-  const handleSaveFead = (feadData: { name: string; icon: string; sourceNames: string[] }) => {
+  const handleSaveFead = (feadData: { name: string; icon: string; sourceIds: string[] }) => {
     if (editingFead) {
       updateFead(editingFead.id, feadData);
     } else {

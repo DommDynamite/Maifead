@@ -4,7 +4,7 @@ import { X, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFeedSourceStore } from '../../stores/feedSourceStore';
 import { useFeedStore } from '../../stores/feedStore';
-import type { FeadWithNames } from '@maifead/types';
+import type { Fead } from '@maifead/types';
 
 const Backdrop = styled(motion.div)`
   position: fixed;
@@ -363,17 +363,17 @@ const COMMON_EMOJIS = [
 interface FeadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (fead: { name: string; icon: string; sourceNames: string[] }) => void;
-  editFead?: FeadWithNames | null;
+  onSave: (fead: { name: string; icon: string; sourceIds: string[] }) => void;
+  editFead?: Fead | null;
 }
 
 export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, editFead }) => {
-  const { sources: feedSources } = useFeedSourceStore();
+  const { sources: feedSources, getSource } = useFeedSourceStore();
   const { items: feedItems } = useFeedStore();
 
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('⚡');
-  const [selectedSourceNames, setSelectedSourceNames] = useState<Set<string>>(new Set());
+  const [selectedSourceIds, setSelectedSourceIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(['rss', 'reddit', 'youtube'])
@@ -384,11 +384,11 @@ export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, e
     if (editFead) {
       setName(editFead.name);
       setIcon(editFead.icon);
-      setSelectedSourceNames(new Set(editFead.sourceNames));
+      setSelectedSourceIds(new Set(editFead.sourceIds));
     } else {
       setName('');
       setIcon('⚡');
-      setSelectedSourceNames(new Set());
+      setSelectedSourceIds(new Set());
     }
     setSearchQuery('');
   }, [editFead, isOpen]);
@@ -472,24 +472,24 @@ export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, e
     });
   };
 
-  const toggleSource = (sourceName: string) => {
-    setSelectedSourceNames(prev => {
+  const toggleSource = (sourceId: string) => {
+    setSelectedSourceIds(prev => {
       const next = new Set(prev);
-      if (next.has(sourceName)) {
-        next.delete(sourceName);
+      if (next.has(sourceId)) {
+        next.delete(sourceId);
       } else {
-        next.add(sourceName);
+        next.add(sourceId);
       }
       return next;
     });
   };
 
   const handleSave = () => {
-    if (name.trim() && selectedSourceNames.size > 0) {
+    if (name.trim() && selectedSourceIds.size > 0) {
       onSave({
         name: name.trim(),
         icon,
-        sourceNames: Array.from(selectedSourceNames),
+        sourceIds: Array.from(selectedSourceIds),
       });
       onClose();
     }
@@ -522,13 +522,13 @@ export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, e
         {isExpanded && (
           <CategoryContent>
             {sources.map(source => {
-              const isSelected = selectedSourceNames.has(source.name);
+              const isSelected = selectedSourceIds.has(source.id);
               return (
                 <SourceItem key={source.id} $selected={isSelected}>
                   <Checkbox
                     type="checkbox"
                     checked={isSelected}
-                    onChange={() => toggleSource(source.name)}
+                    onChange={() => toggleSource(source.id)}
                     id={`fead-source-${source.id}`}
                   />
                   <SourceInfo>
@@ -607,7 +607,7 @@ export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, e
               </FormGroup>
 
               <FormGroup>
-                <Label>Sources ({selectedSourceNames.size} selected)</Label>
+                <Label>Sources ({selectedSourceIds.size} selected)</Label>
                 <SearchContainer>
                   <SearchIcon />
                   <SearchInput
@@ -633,7 +633,7 @@ export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, e
                 type="button"
                 $variant="primary"
                 onClick={handleSave}
-                disabled={!name.trim() || selectedSourceNames.size === 0}
+                disabled={!name.trim() || selectedSourceIds.size === 0}
               >
                 {editFead ? 'Save Changes' : 'Create Fead'}
               </Button>

@@ -31,7 +31,7 @@ export const useCollectionStore = create<CollectionStore>()((set, get) => ({
           description: c.description,
           color: c.color,
           icon: c.icon,
-          itemIds: [], // Will be populated when fetching individual collection
+          itemIds: c.itemIds || [], // Now populated from backend
           createdAt: new Date(c.createdAt),
           updatedAt: new Date(c.updatedAt),
         })),

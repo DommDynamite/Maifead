@@ -4,7 +4,8 @@ import { X, Plus, Edit2, Trash2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../../stores/uiStore';
 import { useFeadStore } from '../../stores/feadStore';
-import type { FeadWithNames } from '@maifead/types';
+import { useFeedSourceStore } from '../../stores/feedSourceStore';
+import type { Fead } from '@maifead/types';
 
 const Backdrop = styled(motion.div)`
   position: fixed;
@@ -19,7 +20,7 @@ const Backdrop = styled(motion.div)`
 
 const Panel = styled(motion.aside)`
   position: fixed;
-  left: 64px;
+  left: 0;
   top: 0;
   height: 100vh;
   width: 280px;
@@ -31,7 +32,6 @@ const Panel = styled(motion.aside)`
   flex-direction: column;
 
   @media (max-width: ${props => props.theme.breakpoints.md}) {
-    left: 0;
     width: 100%;
     max-width: 320px;
   }
@@ -233,12 +233,13 @@ const EmptyState = styled.div`
 
 interface FeadsPanelProps {
   onCreateFead?: () => void;
-  onEditFead?: (fead: FeadWithNames) => void;
+  onEditFead?: (fead: Fead) => void;
 }
 
 export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead }) => {
   const { isFeadsPanelOpen, toggleFeadsPanel, activeFeadId, setActiveFead } = useUIStore();
   const { feads, deleteFead } = useFeadStore();
+  const { getSource } = useFeedSourceStore();
   const [expandedFeadId, setExpandedFeadId] = useState<string | null>(null);
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -260,7 +261,7 @@ export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead
     setExpandedFeadId(expandedFeadId === feadId ? null : feadId);
   };
 
-  const handleEditClick = (e: React.MouseEvent, fead: FeadWithNames) => {
+  const handleEditClick = (e: React.MouseEvent, fead: Fead) => {
     e.stopPropagation();
     onEditFead?.(fead);
   };
@@ -287,9 +288,9 @@ export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead
             onClick={handleBackdropClick}
           />
           <Panel
-            initial={{ x: -344 }}
+            initial={{ x: -280 }}
             animate={{ x: 0 }}
-            exit={{ x: -344 }}
+            exit={{ x: -280 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           >
             <Header>
@@ -311,6 +312,11 @@ export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead
                   const isActive = activeFeadId === fead.id;
                   const isExpanded = expandedFeadId === fead.id;
 
+                  // Convert sourceIds to source names for display
+                  const sourceNames = fead.sourceIds
+                    .map(id => getSource(id)?.name)
+                    .filter((name): name is string => name !== undefined);
+
                   return (
                     <div key={fead.id}>
                       <FeadItem $active={isActive} onClick={() => handleFeadClick(fead.id)}>
@@ -327,7 +333,7 @@ export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead
 
                         <FeadInfo>
                           <FeadName>{fead.name}</FeadName>
-                          <SourceCount>{fead.sourceNames.length} sources</SourceCount>
+                          <SourceCount>{fead.sourceIds.length} sources</SourceCount>
                         </FeadInfo>
 
                         <ActionButtons>
@@ -356,7 +362,7 @@ export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            {fead.sourceNames.map(sourceName => (
+                            {sourceNames.map(sourceName => (
                               <SourceTag key={sourceName}>• {sourceName}</SourceTag>
                             ))}
                           </ExpandedSources>
