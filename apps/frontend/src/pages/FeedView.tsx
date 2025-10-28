@@ -241,6 +241,39 @@ export const FeedView: React.FC = () => {
         const bLatest = sourceLatest.get(b.source.name) || 0;
         return bLatest - aLatest;
       });
+    } else if (sortBy === 'shuffle') {
+      // Interleave items from different sources evenly
+      // Group items by source
+      const itemsBySource = new Map<string, ContentItem[]>();
+      items.forEach(item => {
+        const sourceName = item.source.name;
+        if (!itemsBySource.has(sourceName)) {
+          itemsBySource.set(sourceName, []);
+        }
+        itemsBySource.get(sourceName)!.push(item);
+      });
+
+      // Sort each source's items by date (newest first)
+      itemsBySource.forEach(sourceItems => {
+        sourceItems.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+      });
+
+      // Interleave items round-robin style
+      sortedItems.length = 0; // Clear array
+      const sourceArrays = Array.from(itemsBySource.values());
+      let index = 0;
+      let hasItems = true;
+
+      while (hasItems) {
+        hasItems = false;
+        for (const sourceItems of sourceArrays) {
+          if (index < sourceItems.length) {
+            sortedItems.push(sourceItems[index]);
+            hasItems = true;
+          }
+        }
+        index++;
+      }
     }
 
     return sortedItems;

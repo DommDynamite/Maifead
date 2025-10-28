@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { ArrowDown, ArrowUp, ListOrdered, Clock } from 'lucide-react';
+import { ArrowDown, ArrowUp, ListOrdered, Clock, Shuffle } from 'lucide-react';
 import type { SortBy } from '../../stores/uiStore';
 
 interface SortOptionsProps {
@@ -103,6 +103,14 @@ export const SortOptions: React.FC<SortOptionsProps> = ({ value, onChange }) => 
           <OptionText>
             <OptionTitle>Source (Most Recent)</OptionTitle>
             <OptionDescription>By source's latest item</OptionDescription>
+          </OptionText>
+        </OptionButton>
+
+        <OptionButton $active={value === 'shuffle'} onClick={() => onChange('shuffle')}>
+          <Shuffle />
+          <OptionText>
+            <OptionTitle>Shuffle</OptionTitle>
+            <OptionDescription>Interleave items evenly from all sources</OptionDescription>
           </OptionText>
         </OptionButton>
       </OptionsGroup>

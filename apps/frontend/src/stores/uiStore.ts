@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 export type FeedLayout = 'single' | 'double' | 'triple';
 export type ActiveView = 'all' | 'sources' | 'fead' | 'saved' | 'collection';
 export type ViewMode = 'detailed' | 'compact';
-export type SortBy = 'newest' | 'oldest' | 'source-az' | 'source-recent';
+export type SortBy = 'newest' | 'oldest' | 'source-az' | 'source-recent' | 'shuffle';
 
 interface UIStore {
   // Layout settings
