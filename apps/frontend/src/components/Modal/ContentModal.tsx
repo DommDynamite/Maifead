@@ -42,6 +42,15 @@ const ModalContainer = styled(motion.div)`
   flex-direction: column;
   position: relative;
 
+  /* Wider on large screens for better video viewing */
+  @media (min-width: 1280px) {
+    max-width: 1100px;
+  }
+
+  @media (min-width: 1536px) {
+    max-width: 1280px;
+  }
+
   @media (max-width: ${props => props.theme.breakpoints.md}) {
     max-width: 100%;
     max-height: 100vh;
