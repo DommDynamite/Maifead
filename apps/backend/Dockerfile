@@ -1,6 +1,9 @@
 # Backend Dockerfile
 FROM node:20-alpine AS base
 
+# Install build dependencies for better-sqlite3
+RUN apk add --no-cache python3 make g++
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -16,7 +19,7 @@ COPY packages ./packages
 # Copy backend app
 COPY apps/backend ./apps/backend
 
-# Install dependencies
+# Install dependencies (this will build better-sqlite3)
 RUN pnpm install --frozen-lockfile
 
 # Build the types package
@@ -27,6 +30,9 @@ RUN pnpm --filter @maifead/backend build
 
 # Production image
 FROM node:20-alpine AS runner
+
+# Install build dependencies for better-sqlite3
+RUN apk add --no-cache python3 make g++
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
@@ -42,7 +48,7 @@ COPY --from=base /app/packages ./packages
 # Copy backend app
 COPY --from=base /app/apps/backend ./apps/backend
 
-# Install production dependencies only
+# Install production dependencies only (this will rebuild better-sqlite3 for Alpine Linux)
 RUN pnpm install --frozen-lockfile --prod
 
 # Create data directory for SQLite database
