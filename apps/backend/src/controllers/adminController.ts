@@ -1,6 +1,6 @@
 import { Response } from 'express';
-import { db } from '../config/database';
-import { AuthRequest } from '../middleware/auth';
+import { db } from '../config/database.js';
+import { AuthRequest } from '../middleware/auth.js';
 import { randomBytes } from 'crypto';
 
 // Get all users
