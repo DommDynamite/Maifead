@@ -1,5 +1,5 @@
 import { Router, type Router as RouterType } from 'express';
-import { authenticate, requireAdmin } from '../middleware/auth';
+import { authenticate, requireAdmin } from '../middleware/auth.js';
 import {
   getUsers,
   approveUser,
