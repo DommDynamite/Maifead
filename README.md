@@ -42,7 +42,7 @@ The easiest way to run Maifead is with Docker:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/maifead.git
+git clone https://github.com/DommDynamite/maifead.git
 cd maifead
 
 # Create environment file
@@ -75,7 +75,7 @@ If you prefer to run without Docker:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/maifead.git
+git clone https://github.com/DommDynamite/maifead.git
 cd maifead
 
 # Install dependencies
@@ -203,7 +203,7 @@ The recommended way to deploy Maifead is with Docker:
 
 2. **Clone and configure:**
    ```bash
-   git clone https://github.com/yourusername/maifead.git
+   git clone https://github.com/DommDynamite/maifead.git
    cd maifead
 
    # Create production environment file
@@ -268,8 +268,8 @@ MIT
 
 ## Mirrors
 
-- **GitHub** (primary): [github.com/yourusername/maifead](https://github.com/yourusername/maifead)
-- **Codeberg** (mirror): [codeberg.org/yourusername/maifead](https://codeberg.org/yourusername/maifead)
+- **GitHub** (primary): [github.com/DommDynamite/maifead](https://github.com/DommDynamite/maifead)
+- **Codeberg** (mirror): [codeberg.org/DommDynamite/maifead](https://codeberg.org/DommDynamite/maifead)
 
 ---
 
