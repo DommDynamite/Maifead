@@ -280,7 +280,7 @@ interface InviteCode {
 export const AdminPage = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { addToast } = useToastStore();
+  const { error, success } = useToastStore();
   const [users, setUsers] = useState<User[]>([]);
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -304,9 +304,9 @@ export const AdminPage = () => {
       ]);
       setUsers(usersResponse.users);
       setInviteCodes(codesResponse.inviteCodes);
-    } catch (error) {
-      console.error('Error loading admin data:', error);
-      addToast('Failed to load admin data', 'error');
+    } catch (err) {
+      console.error('Error loading admin data:', err);
+      error('Failed to load admin data');
     } finally {
       setLoading(false);
     }
@@ -315,63 +315,63 @@ export const AdminPage = () => {
   const handleApproveUser = async (userId: string) => {
     try {
       await api.approveUser(userId);
-      addToast('User approved successfully', 'success');
+      success('User approved successfully');
       await loadData();
-    } catch (error) {
-      console.error('Error approving user:', error);
-      addToast('Failed to approve user', 'error');
+    } catch (err) {
+      console.error('Error approving user:', err);
+      error('Failed to approve user');
     }
   };
 
   const handleBanUser = async (userId: string) => {
     try {
       await api.banUser(userId);
-      addToast('User banned successfully', 'success');
+      success('User banned successfully');
       await loadData();
-    } catch (error) {
-      console.error('Error banning user:', error);
-      addToast('Failed to ban user', 'error');
+    } catch (err) {
+      console.error('Error banning user:', err);
+      error('Failed to ban user');
     }
   };
 
   const handleUnbanUser = async (userId: string) => {
     try {
       await api.unbanUser(userId);
-      addToast('User unbanned successfully', 'success');
+      success('User unbanned successfully');
       await loadData();
-    } catch (error) {
-      console.error('Error unbanning user:', error);
-      addToast('Failed to unban user', 'error');
+    } catch (err) {
+      console.error('Error unbanning user:', err);
+      error('Failed to unban user');
     }
   };
 
   const handleGenerateInviteCode = async () => {
     try {
       await api.generateInviteCode();
-      addToast('Invite code generated successfully', 'success');
+      success('Invite code generated successfully');
       await loadData();
-    } catch (error) {
-      console.error('Error generating invite code:', error);
-      addToast('Failed to generate invite code', 'error');
+    } catch (err) {
+      console.error('Error generating invite code:', err);
+      error('Failed to generate invite code');
     }
   };
 
   const handleDeleteInviteCode = async (codeId: string) => {
     try {
       await api.deleteInviteCode(codeId);
-      addToast('Invite code deleted successfully', 'success');
+      success('Invite code deleted successfully');
       await loadData();
-    } catch (error) {
-      console.error('Error deleting invite code:', error);
-      addToast('Failed to delete invite code', 'error');
+    } catch (err) {
+      console.error('Error deleting invite code:', err);
+      error('Failed to delete invite code');
     }
   };
 
   const handleCopyInviteLink = (inviteUrl: string) => {
     navigator.clipboard.writeText(inviteUrl).then(() => {
-      addToast('Invite link copied to clipboard', 'success');
+      success('Invite link copied to clipboard');
     }).catch(() => {
-      addToast('Failed to copy invite link', 'error');
+      error('Failed to copy invite link');
     });
   };
 

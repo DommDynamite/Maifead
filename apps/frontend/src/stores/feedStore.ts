@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import type { ContentItem } from '@maifead/types';
 
 // Extended ContentItem with backward-compatible flat properties
+// Note: content and author are intentionally omitted to avoid conflicts with ContentItem
 export type FeedContentItem = ContentItem & {
   sourceId?: string;
   link?: string;
@@ -10,8 +11,6 @@ export type FeedContentItem = ContentItem & {
   excerpt?: string;
   read?: boolean;
   saved?: boolean;
-  content?: string;
-  author?: string;
 };
 
 interface FeedStore {
@@ -75,8 +74,6 @@ export const useFeedStore = create<FeedStore>()((set, get) => ({
           excerpt: item.excerpt,
           read: item.read,
           saved: item.saved,
-          content: item.content,
-          author: item.author,
         } as FeedContentItem)),
         isLoading: false,
       });

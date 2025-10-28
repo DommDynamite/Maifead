@@ -306,7 +306,7 @@ const ModalButtons = styled.div`
 export const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { user, updateProfile, logout } = useAuthStore();
-  const { addToast } = useToastStore();
+  const { success, info } = useToastStore();
 
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -374,7 +374,7 @@ export const ProfilePage: React.FC = () => {
     });
 
     setIsEditing(false);
-    addToast('Profile updated successfully!', 'success');
+    success('Profile updated successfully!');
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -396,13 +396,13 @@ export const ProfilePage: React.FC = () => {
     localStorage.setItem('maifead-mock-users', JSON.stringify(updatedUsers));
 
     logout();
-    addToast('Account deleted successfully', 'info');
+    info('Account deleted successfully');
     navigate('/auth');
   };
 
   const handleLogout = () => {
     logout();
-    addToast('Signed out successfully', 'info');
+    info('Signed out successfully');
     navigate('/auth');
   };
 
