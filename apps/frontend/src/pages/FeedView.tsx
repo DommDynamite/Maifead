@@ -126,13 +126,13 @@ export const FeedView: React.FC = () => {
 
       // Extract first high-res image from content for Reddit galleries
       let mediaUrl = item.imageUrl;
-      const content = item.content || '';
+      const contentHtml = item.content?.html || item.content?.text || '';
 
       // Check if this is a Reddit gallery post (contains reddit-gallery div with img tags)
-      if (content.includes('reddit-gallery')) {
+      if (contentHtml.includes('reddit-gallery')) {
         // Extract first image URL from content - match any img src attribute
         // This handles both preview.redd.it and i.redd.it URLs
-        const imgMatch = content.match(/<img[^>]*src=["']([^"']+(?:preview\.redd\.it|i\.redd\.it)[^"']+)["']/);
+        const imgMatch = contentHtml.match(/<img[^>]*src=["']([^"']+(?:preview\.redd\.it|i\.redd\.it)[^"']+)["']/);
         if (imgMatch) {
           console.log('[GALLERY] Extracted high-res URL:', imgMatch[1], 'from item:', item.title);
           mediaUrl = imgMatch[1];
@@ -143,33 +143,19 @@ export const FeedView: React.FC = () => {
       }
 
       return {
-        id: item.id,
+        ...item,
         sourceId: item.sourceId, // Preserve sourceId for filtering
-        title: item.title,
         source: {
-          type: source?.type || 'rss',
-          name: source?.name || 'Unknown Source',
-          url: source?.url || '',
-          icon: source?.icon || '',
-        },
-        publishedAt: item.publishedAt || new Date(),
-        author: item.author ? { name: item.author } : undefined,
-        content: {
-          text: item.content || '',
-          html: item.content || '',
-          excerpt: item.excerpt || '',
+          type: source?.type || item.source.type,
+          name: source?.name || item.source.name || 'Unknown Source',
+          url: source?.url || item.source.url || '',
+          icon: source?.icon || item.source.icon || '',
         },
         media: mediaUrl ? [{
           type: 'image' as const,
           url: mediaUrl,
           alt: item.title,
-        }] : undefined,
-        thumbnailUrl: item.imageUrl,
-        link: item.link,
-        url: item.link,
-        isRead: item.read,
-        isSaved: item.saved,
-        tags: [],
+        }] : item.media,
       } as ContentItem & { sourceId: string };
     });
   }, [feedItems, sources]);

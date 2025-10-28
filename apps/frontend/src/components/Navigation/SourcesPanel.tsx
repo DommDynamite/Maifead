@@ -267,7 +267,7 @@ const AddButton = styled.button`
 
 export const SourcesPanel: React.FC = () => {
   const navigate = useNavigate();
-  const { isSourcesPanelOpen, toggleSourcesPanel, selectedSourceNames, toggleSource, clearSourceSelection } =
+  const { isSourceFilterModalOpen: isSourcesPanelOpen, toggleSourceFilterModal: toggleSourcesPanel, selectedSourceNames, toggleSource, clearSourceSelection } =
     useUIStore();
   const { sources: feedSources } = useFeedSourceStore();
   const { items: feedItems } = useFeedStore();
