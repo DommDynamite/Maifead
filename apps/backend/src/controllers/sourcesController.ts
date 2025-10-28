@@ -32,6 +32,7 @@ export class SourcesController {
         description: s.description,
         category: s.category,
         fetchInterval: s.fetch_interval,
+        retentionDays: s.retention_days ?? 30,
         lastFetchedAt: s.last_fetched_at ? new Date(s.last_fetched_at) : null,
         whitelistKeywords: s.whitelist_keywords ? JSON.parse(s.whitelist_keywords) : [],
         blacklistKeywords: s.blacklist_keywords ? JSON.parse(s.blacklist_keywords) : [],
@@ -226,6 +227,7 @@ export class SourcesController {
         description: source.description,
         category: source.category,
         fetchInterval: source.fetch_interval,
+        retentionDays: source.retention_days ?? 30,
         lastFetchedAt: source.last_fetched_at ? new Date(source.last_fetched_at) : null,
         whitelistKeywords: source.whitelist_keywords ? JSON.parse(source.whitelist_keywords) : [],
         blacklistKeywords: source.blacklist_keywords ? JSON.parse(source.blacklist_keywords) : [],
@@ -245,7 +247,7 @@ export class SourcesController {
     try {
       const userId = (req as any).userId;
       const { id } = req.params;
-      const { name, category, fetchInterval, youtubeShortsFilter, whitelistKeywords, blacklistKeywords } = req.body;
+      const { name, category, fetchInterval, youtubeShortsFilter, retentionDays, whitelistKeywords, blacklistKeywords } = req.body;
 
       // Verify ownership
       const source = db.prepare('SELECT * FROM sources WHERE id = ? AND user_id = ?')
@@ -274,6 +276,10 @@ export class SourcesController {
       if (youtubeShortsFilter !== undefined) {
         updates.push('youtube_shorts_filter = ?');
         values.push(youtubeShortsFilter);
+      }
+      if (retentionDays !== undefined) {
+        updates.push('retention_days = ?');
+        values.push(retentionDays);
       }
       if (whitelistKeywords !== undefined) {
         updates.push('whitelist_keywords = ?');
@@ -312,6 +318,7 @@ export class SourcesController {
         iconUrl: updated.icon_url,
         description: updated.description,
         category: updated.category,
+        retentionDays: updated.retention_days ?? 30,
         fetchInterval: updated.fetch_interval,
         lastFetchedAt: updated.last_fetched_at ? new Date(updated.last_fetched_at) : null,
         whitelistKeywords: updated.whitelist_keywords ? JSON.parse(updated.whitelist_keywords) : [],

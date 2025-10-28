@@ -19,7 +19,7 @@ export const getFeads = (req: AuthRequest, res: Response) => {
     // Get all feads for the user
     const feads = db
       .prepare(
-        `SELECT id, name, icon, created_at, updated_at
+        `SELECT id, name, icon, is_important, created_at, updated_at
          FROM feads
          WHERE user_id = ?
          ORDER BY created_at DESC`
@@ -39,6 +39,7 @@ export const getFeads = (req: AuthRequest, res: Response) => {
         id: fead.id,
         name: fead.name,
         icon: fead.icon,
+        isImportant: Boolean(fead.is_important),
         sourceIds,
         createdAt: fead.created_at,
         updatedAt: fead.updated_at,
@@ -67,7 +68,7 @@ export const getFead = (req: AuthRequest, res: Response) => {
     // Get the fead
     const fead = db
       .prepare(
-        `SELECT id, name, icon, created_at, updated_at
+        `SELECT id, name, icon, is_important, created_at, updated_at
          FROM feads
          WHERE id = ? AND user_id = ?`
       )
@@ -87,6 +88,7 @@ export const getFead = (req: AuthRequest, res: Response) => {
       id: fead.id,
       name: fead.name,
       icon: fead.icon,
+      isImportant: Boolean(fead.is_important),
       sourceIds,
       createdAt: fead.created_at,
       updatedAt: fead.updated_at,
@@ -103,7 +105,7 @@ export const getFead = (req: AuthRequest, res: Response) => {
 export const createFead = (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    const { name, icon, sourceIds } = req.body;
+    const { name, icon, sourceIds, isImportant } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -115,12 +117,13 @@ export const createFead = (req: AuthRequest, res: Response) => {
 
     const feadId = uuidv4();
     const now = Date.now();
+    const important = isImportant ? 1 : 0;
 
     // Insert fead
     db.prepare(
-      `INSERT INTO feads (id, user_id, name, icon, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(feadId, userId, name, icon, now, now);
+      `INSERT INTO feads (id, user_id, name, icon, is_important, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(feadId, userId, name, icon, important, now, now);
 
     // Insert source associations
     if (sourceIds && Array.isArray(sourceIds) && sourceIds.length > 0) {
@@ -137,6 +140,7 @@ export const createFead = (req: AuthRequest, res: Response) => {
       id: feadId,
       name,
       icon,
+      isImportant: Boolean(important),
       sourceIds: sourceIds || [],
       createdAt: now,
       updatedAt: now,
@@ -154,7 +158,7 @@ export const updateFead = (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
     const { id } = req.params;
-    const { name, icon, sourceIds } = req.body;
+    const { name, icon, sourceIds, isImportant } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -181,6 +185,11 @@ export const updateFead = (req: AuthRequest, res: Response) => {
     if (icon !== undefined) {
       updates.push('icon = ?');
       values.push(icon);
+    }
+
+    if (isImportant !== undefined) {
+      updates.push('is_important = ?');
+      values.push(isImportant ? 1 : 0);
     }
 
     updates.push('updated_at = ?');
@@ -214,7 +223,7 @@ export const updateFead = (req: AuthRequest, res: Response) => {
     // Fetch updated fead
     const updated = db
       .prepare(
-        `SELECT id, name, icon, created_at, updated_at
+        `SELECT id, name, icon, is_important, created_at, updated_at
          FROM feads
          WHERE id = ? AND user_id = ?`
       )
@@ -229,6 +238,7 @@ export const updateFead = (req: AuthRequest, res: Response) => {
       id: updated.id,
       name: updated.name,
       icon: updated.icon,
+      isImportant: Boolean(updated.is_important),
       sourceIds: updatedSourceIds,
       createdAt: updated.created_at,
       updatedAt: updated.updated_at,
