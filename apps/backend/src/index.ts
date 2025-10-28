@@ -37,8 +37,12 @@ app.use('/api/collections', collectionsRoutes);
 app.use('/api/feads', feadsRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Health check
+// Health check endpoints
 app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
