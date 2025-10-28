@@ -1,10 +1,18 @@
 // Use the local network IP for mobile access, fallback to localhost for desktop
 const getApiUrl = () => {
+  // Check if VITE_API_URL is defined in environment
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
   // Try to detect if we're on mobile by checking if we're accessing via a network IP
   const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+
   if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-    // We're accessing via network IP, use the same IP for the backend
-    return `http://${hostname}:3001/api`;
+    // Use same protocol as the page (http/https) and appropriate port
+    const port = protocol === 'https:' ? '' : ':3001';
+    return `${protocol}//${hostname}${port}/api`;
   }
   return 'http://localhost:3001/api';
 };
