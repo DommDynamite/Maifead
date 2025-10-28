@@ -250,14 +250,6 @@ docker-compose -f docker-compose.prod.yml build --no-cache
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-## Roadmap
-
-See [IDEAS.md](IDEAS.md) for future enhancements, including:
-- Optional PostgreSQL support for large-scale deployments
-- Reddit video audio merging
-- Shorts-style vertical viewer
-- Additional platform integrations
-
 ## Contributing
 
 Contributions are welcome! This is a privacy-focused, community-driven project.
