@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import { TrendingUp } from 'lucide-react';
-import type { FeedItem } from '@maifead/types';
+import type { ContentItem } from '@maifead/types';
 
 interface SourceBreakdownProps {
-  items: FeedItem[];
+  items: ContentItem[];
 }
 
 interface SourceStats {
@@ -101,8 +101,9 @@ export const SourceBreakdown: React.FC<SourceBreakdownProps> = ({ items }) => {
     const sourceCounts = new Map<string, number>();
 
     items.forEach(item => {
-      const current = sourceCounts.get(item.sourceName) || 0;
-      sourceCounts.set(item.sourceName, current + 1);
+      const sourceName = item.source.name;
+      const current = sourceCounts.get(sourceName) || 0;
+      sourceCounts.set(sourceName, current + 1);
     });
 
     const stats: SourceStats[] = Array.from(sourceCounts.entries())

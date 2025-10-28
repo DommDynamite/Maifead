@@ -218,11 +218,11 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({ isOp
     useCollectionStore();
   const { success } = useToastStore();
 
-  const handleCreateCollection = () => {
+  const handleCreateCollection = async () => {
     if (!newCollectionName.trim()) return;
 
-    const collection = addCollection({ name: newCollectionName.trim() });
-    addItemToCollection(collection.id, item.id);
+    const collection = await addCollection({ name: newCollectionName.trim() });
+    await addItemToCollection(collection.id, item.id);
     success(`Added to "${collection.name}"`);
     setNewCollectionName('');
   };

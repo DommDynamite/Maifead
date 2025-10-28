@@ -205,12 +205,12 @@ export const Card: React.FC<CardProps> = ({ item, onClick, viewMode = 'detailed'
       onClick: () => setCollectionModalOpen(true),
     },
     {
-      label: item.saved ? 'Remove from Saved' : 'Save for Later',
-      icon: item.saved ? Bookmark : Star,
+      label: item.isSaved ? 'Remove from Saved' : 'Save for Later',
+      icon: item.isSaved ? Bookmark : Star,
       onClick: async () => {
         try {
-          await markItemSaved(item.id, !item.saved);
-          success(item.saved ? 'Removed from saved items' : 'Saved for later');
+          await markItemSaved(item.id, !item.isSaved);
+          success(item.isSaved ? 'Removed from saved items' : 'Saved for later');
         } catch (error) {
           console.error('Failed to toggle saved status:', error);
         }

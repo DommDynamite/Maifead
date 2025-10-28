@@ -1,20 +1,20 @@
 import { z } from 'zod';
 
 // Source types
-export type SourceType = 'rss' | 'reddit' | 'youtube' | 'twitter' | 'mastodon';
+export type ContentSourceType = 'rss' | 'reddit' | 'youtube' | 'twitter' | 'mastodon' | 'bluesky';
 
 export type MediaType = 'image' | 'video' | 'audio' | 'embed';
 
 // Content source
 export interface ContentSource {
-  type: SourceType;
+  type: ContentSourceType;
   name: string;
   url: string;
   icon?: string;
 }
 
 export const contentSourceSchema = z.object({
-  type: z.enum(['rss', 'reddit', 'youtube', 'twitter', 'mastodon']),
+  type: z.enum(['rss', 'reddit', 'youtube', 'twitter', 'mastodon', 'bluesky']),
   name: z.string(),
   url: z.string().url(),
   icon: z.string().url().optional(),

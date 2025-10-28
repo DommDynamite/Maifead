@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { api } from '../services/api';
-import type { FeedItem } from '@maifead/types';
+import type { ContentItem } from '@maifead/types';
 
 interface FeedStore {
-  items: FeedItem[];
+  items: ContentItem[];
   isLoading: boolean;
   fetchItems: (params?: {
     sourceId?: string;
@@ -14,7 +14,7 @@ interface FeedStore {
   markItemRead: (id: string, read: boolean) => Promise<void>;
   markItemSaved: (id: string, saved: boolean) => Promise<void>;
   markAllRead: (sourceId?: string) => Promise<void>;
-  getItem: (id: string) => FeedItem | undefined;
+  getItem: (id: string) => ContentItem | undefined;
 }
 
 export const useFeedStore = create<FeedStore>()((set, get) => ({

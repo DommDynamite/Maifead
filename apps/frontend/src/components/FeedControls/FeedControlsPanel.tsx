@@ -6,10 +6,10 @@ import { useUIStore } from '../../stores/uiStore';
 import { SortOptions } from './SortOptions';
 import { FeedStatistics } from './FeedStatistics';
 import { SourceBreakdown } from './SourceBreakdown';
-import type { FeedItem } from '@maifead/types';
+import type { ContentItem } from '@maifead/types';
 
 interface FeedControlsPanelProps {
-  items: FeedItem[];
+  items: ContentItem[];
 }
 
 const Overlay = styled(motion.div)`

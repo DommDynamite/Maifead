@@ -33,8 +33,12 @@ const lightColors = {
   warningBg: '#FFFBEB',
   error: '#EF4444',
   errorBg: '#FEF2F2',
+  danger: '#EF4444',
+  dangerBg: '#FEF2F2',
   info: '#3B82F6',
   infoBg: '#EFF6FF',
+  secondary: '#737373',
+  secondaryBg: '#F5F5F5',
 };
 
 // Dark theme colors (Obsidian-inspired)
@@ -63,8 +67,12 @@ const darkColors = {
   warningBg: '#451A03',
   error: '#EF4444',
   errorBg: '#450A0A',
+  danger: '#EF4444',
+  dangerBg: '#450A0A',
   info: '#3B82F6',
   infoBg: '#1E3A8A',
+  secondary: '#A3A3A3',
+  secondaryBg: '#333333',
 };
 
 // Typography
@@ -132,6 +140,7 @@ const shadows = {
   md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
   lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
   xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+  '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
   inner: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
 };
 
@@ -203,6 +212,7 @@ export const darkTheme = {
     md: '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.12)',
     lg: '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)',
     xl: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08)',
+    '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
   },
   transitions,
   breakpoints,

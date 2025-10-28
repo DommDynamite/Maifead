@@ -1,10 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import { FileText, CheckCircle, Circle, Calendar } from 'lucide-react';
-import type { FeedItem } from '@maifead/types';
+import type { ContentItem } from '@maifead/types';
 
 interface FeedStatisticsProps {
-  items: FeedItem[];
+  items: ContentItem[];
   readItemIds: string[];
 }
 
