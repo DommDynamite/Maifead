@@ -48,8 +48,11 @@ COPY --from=base /app/packages ./packages
 # Copy backend app
 COPY --from=base /app/apps/backend ./apps/backend
 
-# Install production dependencies only (this will rebuild better-sqlite3 for Alpine Linux)
+# Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod
+
+# Rebuild better-sqlite3 for Alpine Linux architecture
+RUN pnpm --filter @maifead/backend rebuild better-sqlite3
 
 # Create data directory for SQLite database
 RUN mkdir -p /app/apps/backend/data
