@@ -143,6 +143,19 @@ export const initializeDatabase = () => {
     // Column already exists, ignore error
   }
 
+  // Add important source columns for notification/priority feeds
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN is_important BOOLEAN DEFAULT 0`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN important_collection_id TEXT`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
   // Add user role and status columns for admin management
   try {
     db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`);
