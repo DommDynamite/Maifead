@@ -6,6 +6,7 @@ import { SettingsPanel } from '../SettingsPanel';
 import { useUIStore } from '../../stores/uiStore';
 import { useFeedStore } from '../../stores/feedStore';
 import { useToastStore } from '../../stores/toastStore';
+import { api } from '../../services/api';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -117,11 +118,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await fetchItems({ limit: 100 });
-      addToast({ message: 'Feed refreshed successfully', type: 'success' });
+      const result = await api.refreshAllSources();
+      await fetchItems({ limit: 500 });
+
+      if (result.totalNewItems > 0) {
+        addToast('success', `Found ${result.totalNewItems} new ${result.totalNewItems === 1 ? 'item' : 'items'} from ${result.sourcesRefreshed} ${result.sourcesRefreshed === 1 ? 'source' : 'sources'}`);
+      } else {
+        addToast('info', 'All sources are up to date');
+      }
     } catch (error) {
       console.error('Refresh error:', error);
-      addToast({ message: 'Failed to refresh feed', type: 'error' });
+      addToast('error', 'Failed to refresh sources');
     } finally {
       setIsRefreshing(false);
     }

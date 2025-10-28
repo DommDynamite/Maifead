@@ -10,6 +10,7 @@ router.get('/', SourcesController.getAll);
 router.post('/', SourcesController.create);
 router.patch('/:id', SourcesController.update);
 router.delete('/:id', SourcesController.delete);
+router.post('/refresh-all', SourcesController.refreshAll);
 router.post('/:id/refresh', SourcesController.refresh);
 router.post('/update-icons', SourcesController.updateIcons);
 

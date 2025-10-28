@@ -129,6 +129,12 @@ class ApiClient {
     });
   }
 
+  async refreshAllSources() {
+    return this.request<{ message: string; totalNewItems: number; sourcesRefreshed: number }>(`/sources/refresh-all`, {
+      method: 'POST',
+    });
+  }
+
   // Feed items endpoints
   async getFeedItems(params?: {
     sourceId?: string;

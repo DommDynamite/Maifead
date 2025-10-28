@@ -8,6 +8,7 @@ import { ContextMenu, type ContextMenuItem } from '../ContextMenu/ContextMenu';
 import { AddToCollectionModal } from '../Collections/AddToCollectionModal';
 import { useUIStore } from '../../stores/uiStore';
 import { useToastStore } from '../../stores/toastStore';
+import { useFeedStore } from '../../stores/feedStore';
 
 interface CardProps {
   item: ContentItem;
@@ -181,10 +182,8 @@ export const Card: React.FC<CardProps> = ({ item, onClick, viewMode = 'detailed'
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
 
-  const { toggleReadState, toggleSavedItem, savedItemIds = [] } = useUIStore();
+  const { markItemRead, markItemSaved } = useFeedStore();
   const { success } = useToastStore();
-
-  const isSaved = savedItemIds?.includes(item.id) ?? false;
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -206,19 +205,27 @@ export const Card: React.FC<CardProps> = ({ item, onClick, viewMode = 'detailed'
       onClick: () => setCollectionModalOpen(true),
     },
     {
-      label: isSaved ? 'Remove from Saved' : 'Save for Later',
-      icon: isSaved ? Bookmark : Star,
-      onClick: () => {
-        toggleSavedItem(item.id);
-        success(isSaved ? 'Removed from saved items' : 'Saved for later');
+      label: item.saved ? 'Remove from Saved' : 'Save for Later',
+      icon: item.saved ? Bookmark : Star,
+      onClick: async () => {
+        try {
+          await markItemSaved(item.id, !item.saved);
+          success(item.saved ? 'Removed from saved items' : 'Saved for later');
+        } catch (error) {
+          console.error('Failed to toggle saved status:', error);
+        }
       },
     },
     {
-      label: 'Mark as Read',
+      label: item.isRead ? 'Mark as Unread' : 'Mark as Read',
       icon: ExternalLink,
-      onClick: () => {
-        toggleReadState(item.id);
-        success(item.isRead ? 'Marked as unread' : 'Marked as read');
+      onClick: async () => {
+        try {
+          await markItemRead(item.id, !item.isRead);
+          success(item.isRead ? 'Marked as unread' : 'Marked as read');
+        } catch (error) {
+          console.error('Failed to toggle read status:', error);
+        }
       },
     },
     {

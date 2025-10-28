@@ -233,6 +233,20 @@ export const initializeDatabase = () => {
     )
   `);
 
+  // User-specific read/saved status for feed items
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_feed_items (
+      user_id TEXT NOT NULL,
+      feed_item_id TEXT NOT NULL,
+      read BOOLEAN DEFAULT 0,
+      saved BOOLEAN DEFAULT 0,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (user_id, feed_item_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (feed_item_id) REFERENCES feed_items(id) ON DELETE CASCADE
+    )
+  `);
+
   // Create indexes for performance
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_feed_items_source_id ON feed_items(source_id);
@@ -244,6 +258,8 @@ export const initializeDatabase = () => {
     CREATE INDEX IF NOT EXISTS idx_collection_items_feed_item_id ON collection_items(feed_item_id);
     CREATE INDEX IF NOT EXISTS idx_feads_user_id ON feads(user_id);
     CREATE INDEX IF NOT EXISTS idx_fead_sources_source_id ON fead_sources(source_id);
+    CREATE INDEX IF NOT EXISTS idx_user_feed_items_user_id ON user_feed_items(user_id);
+    CREATE INDEX IF NOT EXISTS idx_user_feed_items_feed_item_id ON user_feed_items(feed_item_id);
   `);
 
   console.log('Database initialized successfully');

@@ -215,7 +215,7 @@ export const FeedView: React.FC = () => {
 
     // STEP 4: Apply read state filter
     if (hideReadItems) {
-      items = items.filter(item => !readItemIds.includes(item.id));
+      items = items.filter(item => !item.isRead);
     }
 
     // STEP 5: Apply sorting
@@ -262,15 +262,18 @@ export const FeedView: React.FC = () => {
     setSelectedItem(item);
     setIsModalOpen(true);
     // Mark as read when opening
-    markAsRead(item.id);
+    markItemRead(item.id, true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
   };
 
-  const handleToggleRead = (id: string) => {
-    toggleReadState(id);
+  const handleToggleRead = async (id: string) => {
+    const item = feedItems.find(i => i.id === id);
+    if (item) {
+      await markItemRead(id, !item.read);
+    }
   };
 
   // Calculate the container width based on layout
@@ -360,9 +363,12 @@ export const FeedView: React.FC = () => {
       {
         key: 'm',
         description: 'Mark item as read/unread',
-        action: () => {
+        action: async () => {
           if (filteredItems.length > 0) {
-            toggleReadState(filteredItems[selectedIndex].id);
+            const item = feedItems.find(i => i.id === filteredItems[selectedIndex].id);
+            if (item) {
+              await markItemRead(item.id, !item.read);
+            }
           }
         },
       },
@@ -456,7 +462,7 @@ export const FeedView: React.FC = () => {
             {filteredItems.map(item => (
               <Card
                 key={item.id}
-                item={{ ...item, isRead: readItemIds.includes(item.id) }}
+                item={item}
                 onClick={() => handleCardClick(item)}
                 viewMode={viewMode}
               />

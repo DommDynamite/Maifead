@@ -402,6 +402,70 @@ export class SourcesController {
   }
 
   /**
+   * Refresh all sources for the authenticated user
+   */
+  static async refreshAll(req: Request, res: Response) {
+    try {
+      const userId = (req as any).userId;
+
+      // Get all user's sources
+      const sources = db.prepare('SELECT * FROM sources WHERE user_id = ?').all(userId) as any[];
+
+      if (sources.length === 0) {
+        return res.json({
+          message: 'No sources to refresh',
+          totalNewItems: 0,
+          sourcesRefreshed: 0,
+        });
+      }
+
+      // Refresh all sources
+      let totalNewItems = 0;
+      for (const sourceRow of sources) {
+        try {
+          const source = {
+            id: sourceRow.id,
+            userId: sourceRow.user_id,
+            name: sourceRow.name,
+            url: sourceRow.url,
+            type: sourceRow.type || 'rss',
+            channelId: sourceRow.channel_id,
+            subreddit: sourceRow.subreddit,
+            redditUsername: sourceRow.reddit_username,
+            redditSourceType: sourceRow.reddit_source_type,
+            youtubeShortsFilter: sourceRow.youtube_shorts_filter || 'all',
+            blueskyHandle: sourceRow.bluesky_handle,
+            blueskyDid: sourceRow.bluesky_did,
+            blueskyFeedUri: sourceRow.bluesky_feed_uri,
+            iconUrl: sourceRow.icon_url,
+            description: sourceRow.description,
+            category: sourceRow.category,
+            fetchInterval: sourceRow.fetch_interval,
+            lastFetchedAt: sourceRow.last_fetched_at ? new Date(sourceRow.last_fetched_at) : undefined,
+            createdAt: new Date(sourceRow.created_at),
+            updatedAt: new Date(sourceRow.updated_at),
+          };
+
+          const newItemsCount = await FeedService.fetchAndStoreItems(source);
+          totalNewItems += newItemsCount;
+        } catch (error) {
+          console.error(`Error refreshing source ${sourceRow.name}:`, error);
+          // Continue with other sources even if one fails
+        }
+      }
+
+      res.json({
+        message: 'All sources refreshed successfully',
+        totalNewItems,
+        sourcesRefreshed: sources.length,
+      });
+    } catch (error) {
+      console.error('Refresh all sources error:', error);
+      res.status(500).json({ error: 'Failed to refresh sources' });
+    }
+  }
+
+  /**
    * Update icons for all sources (admin/utility endpoint)
    */
   static async updateIcons(req: Request, res: Response) {
