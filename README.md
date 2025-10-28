@@ -2,206 +2,275 @@
 
 > _Irish for "feed/stream"_
 
-A beautiful RSS feed aggregator designed to help you consume content from your favorite sources without algorithmic distractions.
+A beautiful, privacy-focused RSS feed aggregator designed to help you consume content from your favorite sources without algorithmic distractions.
 
-## 🎯 Vision
+## Features
 
-Maifead provides a unified, distraction-free interface for reading content from multiple sources. No algorithms, no recommendations—just the sources you choose, displayed beautifully.
+- **Multi-Source Support**: RSS feeds, YouTube channels, Bluesky profiles
+- **Smart Organization**: Collections and custom Feads for grouping sources
+- **Cross-Device Sync**: Read/saved status syncs across all your devices
+- **Privacy-Focused**: Self-hosted, no tracking, your data stays yours
+- **Beautiful UI**: Dark/light themes with customizable color presets
+- **Mobile-First**: Responsive design that works great on all devices
+- **Keyword Filtering**: Whitelist/blacklist for fine-tuned content control
+- **YouTube Shorts Control**: Filter shorts separately from regular videos
+- **Flexible Viewing**: Multiple sort options including novel "Shuffle" mode for balanced source mixing
 
-## 🚀 Current Status: Frontend POC (Phase 2)
-
-### ✅ Completed
-
-- [x] Monorepo structure with pnpm workspaces
-- [x] Shared types package
-- [x] Vite + React + TypeScript setup
-- [x] Complete design system (dark/light themes)
-- [x] Styled Components with theme support
-- [x] Theme toggle functionality
-- [x] Mock RSS feed data (10 items)
-- [x] Global styles and typography
-- [x] Development server running
-
-### 🎨 Design System
-
-- **Colors**: Dark grey (`#1E1E1E`) + blue-green accent (`#00B4A6`)
-- **Typography**: System font stack with responsive scaling
-- **Spacing**: 8px grid system
-- **Themes**: Dark (default) and light modes with smooth transitions
-- **Inspiration**: Obsidian's content-first, minimal aesthetic
-
-### 📦 Tech Stack
+## Tech Stack
 
 **Frontend:**
 - React 19 + TypeScript
 - Vite (build tool)
 - Styled Components (styling + theming)
-- Zustand (UI state)
-- TanStack Query (planned - server state)
-- Framer Motion (planned - animations)
+- Zustand (state management)
 - Lucide React (icons)
 
-**Backend (Planned):**
-- NestJS + TypeScript
-- SQLite + Prisma ORM
-- Lucia (authentication)
-- rss-parser (feed parsing)
+**Backend:**
+- Express + TypeScript
+- SQLite with better-sqlite3 (simple, file-based database)
+- JWT authentication
+- RSS parsing with rss-parser
+- YouTube integration via RSS feeds
+- Bluesky AT Protocol integration
+- Scheduled feed fetching with node-cron
 
-## 🏗️ Project Structure
+## Getting Started
 
-```
-maifead/
-├── apps/
-│   └── frontend/          # React application
-│       ├── src/
-│       │   ├── components/    # Reusable UI components
-│       │   ├── theme/         # Design system (colors, typography, spacing)
-│       │   ├── stores/        # Zustand stores (theme, UI state)
-│       │   ├── data/          # Mock data for POC
-│       │   ├── pages/         # Page components
-│       │   └── App.tsx        # Root component
-│       └── package.json
-├── packages/
-│   └── types/             # Shared TypeScript types
-│       └── src/
-│           └── content.ts     # ContentItem interface
-├── docs/                  # Comprehensive documentation
-│   ├── 00-project-overview.md
-│   ├── 01-technical-stack.md
-│   ├── 02-architecture.md
-│   ├── 03-data-models.md
-│   ├── 04-api-specification.md
-│   ├── 05-frontend-routes.md
-│   ├── 06-design-system.md
-│   ├── 07-user-workflows.md
-│   ├── 08-mvp-scope.md
-│   └── 09-development-phases.md
-└── pnpm-workspace.yaml
+### Option 1: Docker (Recommended)
+
+The easiest way to run Maifead is with Docker:
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/maifead.git
+cd maifead
+
+# Create environment file
+cat > .env << EOF
+JWT_SECRET=your-secret-key-change-this-in-production
+ADMIN_EMAIL=your-email@example.com
+BASE_URL=http://localhost
+EOF
+
+# Start with Docker Compose
+docker-compose up -d
 ```
 
-## 🚦 Getting Started
+The app will be available at `http://localhost`
 
-### Prerequisites
+**For production deployment:**
 
+```bash
+# Use the production compose file
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Option 2: Manual Installation
+
+If you prefer to run without Docker:
+
+**Prerequisites:**
 - Node.js 20.x or higher
 - pnpm 8.x or higher
 
-### Installation
-
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/maifead.git
+cd maifead
+
 # Install dependencies
 pnpm install
 
-# Start development server
-pnpm dev
+# Set up environment variables
+cd apps/backend
+cp .env.example .env
+# Edit .env and set your JWT_SECRET and ADMIN_EMAIL
 
-# Or start frontend only
+# Start the backend
+pnpm --filter @maifead/backend dev
+
+# In a new terminal, start the frontend
 pnpm --filter @maifead/frontend dev
 ```
 
 The app will be available at `http://localhost:5173`
 
-### Try It Out
+### First-Time Setup
 
-1. Open `http://localhost:5173` in your browser
-2. See the welcome page with design system showcase
-3. **Click the theme toggle** (sun/moon icon) in the top-right to switch between light and dark modes
-4. Notice smooth color transitions and beautiful typography
+1. Open the app in your browser (http://localhost or http://localhost:5173)
+2. Sign up with your email (the first user with ADMIN_EMAIL becomes admin)
+3. Add your first RSS feed, YouTube channel, or Bluesky profile
+4. Start organizing with Collections and Feads!
 
-## 📋 Next Steps (Phase 2 Continuation)
+## Project Structure
 
-1. **Card Component** - Build the RSS feed card with:
-   - Source icon, name, timestamp
-   - Title and excerpt
-   - Media display (image/video)
-   - Read/unread state
-   - Hover effects
+```
+maifead/
+├── apps/
+│   ├── backend/               # Express API server
+│   │   ├── src/
+│   │   │   ├── config/        # Database, auth configuration
+│   │   │   ├── controllers/   # API route handlers
+│   │   │   ├── middleware/    # Auth, error handling
+│   │   │   ├── routes/        # API routes
+│   │   │   ├── services/      # Feed fetching, parsing
+│   │   │   └── index.ts       # Server entry point
+│   │   └── data/              # SQLite database storage
+│   └── frontend/              # React application
+│       ├── src/
+│       │   ├── components/    # Reusable UI components
+│       │   ├── pages/         # Page components
+│       │   ├── stores/        # Zustand state stores
+│       │   ├── theme/         # Design system
+│       │   └── lib/           # Utilities, API client
+│       └── package.json
+└── packages/
+    └── types/                 # Shared TypeScript types
+```
 
-2. **Feed View** - Create the main feed page:
-   - List of cards with virtual scrolling
-   - Pull-to-refresh gesture (mobile)
-   - Loading skeleton states
+## Configuration
 
-3. **Content Modal** - Reading experience:
-   - Full content display
-   - Embedded media
-   - Mark as read/unread
-   - Open original link
+### Environment Variables (Backend)
 
-4. **Mobile Responsive** - Adapt for all screen sizes:
-   - Bottom navigation on mobile
-   - Touch-friendly targets
-   - Responsive card layout
+Create `apps/backend/.env`:
 
-5. **Polish** - Animations and interactions:
-   - Card hover effects
-   - Modal open/close transitions
-   - Smooth scrolling
+```env
+PORT=3001
+NODE_ENV=development
+JWT_SECRET=your-secret-key-change-this-in-production
+DATABASE_PATH=./data/maifead.db
+FEED_FETCH_INTERVAL=*/15 * * * *
 
-## 📚 Documentation
+# Admin Configuration
+ADMIN_EMAIL=your-email@example.com
 
-See the [`docs/`](./docs) directory for comprehensive documentation:
+# App URL (for invite links)
+BASE_URL=http://localhost:5173
+```
 
-- **[Project Overview](./docs/00-project-overview.md)** - Vision, goals, principles
-- **[Technical Stack](./docs/01-technical-stack.md)** - Technology decisions and rationale
-- **[Architecture](./docs/02-architecture.md)** - System design and data flow
-- **[Data Models](./docs/03-data-models.md)** - Database schemas and TypeScript interfaces
-- **[API Specification](./docs/04-api-specification.md)** - Backend API endpoints (planned)
-- **[Frontend Routes](./docs/05-frontend-routes.md)** - Page structure and navigation
-- **[Design System](./docs/06-design-system.md)** - Colors, typography, components
-- **[User Workflows](./docs/07-user-workflows.md)** - User journey maps
-- **[MVP Scope](./docs/08-mvp-scope.md)** - What's in/out for v1
-- **[Development Phases](./docs/09-development-phases.md)** - Build roadmap
+### Admin Features
 
-## 🎨 Design Principles
+The first user who signs up with the `ADMIN_EMAIL` becomes an admin and can:
+- Manage user accounts (activate/deactivate)
+- Generate invite codes for new users
+- View system statistics
 
-1. **Content-First** - UI fades into the background
-2. **No Algorithms** - User controls what they see
-3. **Beautiful Simplicity** - Clean, modern aesthetics
-4. **Mobile-Ready** - Works great on all devices
-5. **Fast & Lightweight** - Minimal backend storage
+## Architecture Highlights
 
-## 🛠️ Development
+### Per-User Read/Saved Status
+- Uses junction table pattern (`user_feed_items`) for true multi-user support
+- Read status syncs automatically across all devices
+- Efficient LEFT JOIN queries with COALESCE for default values
+
+### Scheduled Feed Fetching
+- Background job runs every 15 minutes (configurable)
+- Fetches new content from all sources
+- Deduplicates based on URL
+- Respects user keyword filters
+
+### Theme System
+- 10 color presets with light/dark modes
+- Persistent per-user preferences
+- Smooth transitions between themes
+- System font stack for performance
+
+## Development
 
 ### Available Scripts
 
 ```bash
-# Start all apps in parallel
+# Start all apps
 pnpm dev
 
-# Start frontend only
+# Start specific app
+pnpm --filter @maifead/backend dev
 pnpm --filter @maifead/frontend dev
 
-# Build all packages
+# Build for production
 pnpm build
 
-# Lint all packages
+# Lint code
 pnpm lint
-
-# Format code
-pnpm format
 ```
 
-### Code Style
+## Deployment
 
-- TypeScript strict mode enabled
-- ESLint for code quality
-- Prettier for formatting
-- Styled Components for styling
+### Docker Deployment
 
-## 📖 Learn More
+The recommended way to deploy Maifead is with Docker:
 
-- [Styled Components Documentation](https://styled-components.com/docs)
-- [Vite Documentation](https://vitejs.dev/)
-- [React Documentation](https://react.dev/)
-- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+1. **Set up your server** with Docker and Docker Compose installed
 
-## 📝 License
+2. **Clone and configure:**
+   ```bash
+   git clone https://github.com/yourusername/maifead.git
+   cd maifead
+
+   # Create production environment file
+   cat > .env << EOF
+   JWT_SECRET=$(openssl rand -base64 32)
+   ADMIN_EMAIL=your-admin@email.com
+   BASE_URL=https://your-domain.com
+   FEED_FETCH_INTERVAL=*/15 * * * *
+   DATA_DIR=./data
+   FRONTEND_PORT=80
+   EOF
+   ```
+
+3. **Start the application:**
+   ```bash
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+4. **Set up reverse proxy** (optional but recommended):
+   - Use Nginx or Caddy to add HTTPS
+   - Point your domain to the server
+   - Configure SSL certificates (Let's Encrypt)
+
+### Data Persistence
+
+The SQLite database is stored in a Docker volume (`maifead-data` in development or `DATA_DIR` in production). To backup your data:
+
+```bash
+# Backup
+docker-compose exec backend tar czf - /app/apps/backend/data > maifead-backup-$(date +%Y%m%d).tar.gz
+
+# Restore
+docker-compose exec -T backend tar xzf - -C / < maifead-backup-20250128.tar.gz
+```
+
+### Updating
+
+To update to the latest version:
+
+```bash
+git pull
+docker-compose -f docker-compose.prod.yml down
+docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+## Roadmap
+
+See [IDEAS.md](IDEAS.md) for future enhancements, including:
+- Optional PostgreSQL support for large-scale deployments
+- Reddit video audio merging
+- Shorts-style vertical viewer
+- Additional platform integrations
+
+## Contributing
+
+Contributions are welcome! This is a privacy-focused, community-driven project.
+
+## License
 
 MIT
 
+## Mirrors
+
+- **GitHub** (primary): [github.com/yourusername/maifead](https://github.com/yourusername/maifead)
+- **Codeberg** (mirror): [codeberg.org/yourusername/maifead](https://codeberg.org/yourusername/maifead)
+
 ---
 
-**Status**: 🚧 Under active development - Phase 2 (Frontend POC with dummy data)
-
-**Current**: Design system complete, theme working, ready to build components!
+Built with TypeScript, React, and a focus on user privacy and control.

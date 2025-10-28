@@ -1,0 +1,58 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+**/dist
+**/build
+**/.next
+**/.vite
+
+# Development files
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Testing
+coverage
+**/.nyc_output
+
+# Database (will be mounted as volume)
+**/data/*.db
+**/data/*.db-*
+
+# Misc
+*.md
+!README.md
+.prettierrc
+.eslintrc*
+.editorconfig
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
