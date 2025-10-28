@@ -1,3 +1,5 @@
+// Database configuration - supports both SQLite and PostgreSQL
+// Set USE_POSTGRES=true in .env to use PostgreSQL instead of SQLite
 import Database from 'better-sqlite3';
 import type BetterSqlite3 from 'better-sqlite3';
 import path from 'path';
