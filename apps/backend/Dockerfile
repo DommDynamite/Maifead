@@ -32,7 +32,7 @@ RUN pnpm --filter @maifead/backend build
 FROM node:20-alpine AS runner
 
 # Install build dependencies for better-sqlite3
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 build-base gcc && ln -sf /usr/bin/python3 /usr/bin/python
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
@@ -51,8 +51,8 @@ COPY --from=base /app/apps/backend ./apps/backend
 # Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod
 
-# Rebuild better-sqlite3 for Alpine Linux architecture
-RUN pnpm --filter @maifead/backend rebuild better-sqlite3
+# Manually rebuild better-sqlite3 for Alpine Linux (pnpm uses symlinks so we need to navigate to actual package)
+RUN cd /app/node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release
 
 # Create data directory for SQLite database
 RUN mkdir -p /app/apps/backend/data
