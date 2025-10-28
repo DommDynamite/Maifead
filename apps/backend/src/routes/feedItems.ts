@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import { FeedItemsController } from '../controllers/feedItemsController.js';
 import { authenticate } from '../middleware/auth.js';
 
-const router = Router();
+const router: RouterType = Router();
 
 router.use(authenticate);
 

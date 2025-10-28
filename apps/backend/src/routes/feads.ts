@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Router as RouterType } from 'express';
 import {
   getFeads,
   getFead,
@@ -8,7 +8,7 @@ import {
 } from '../controllers/feadsController.js';
 import { authenticate } from '../middleware/auth.js';
 
-const router = express.Router();
+const router: RouterType = express.Router();
 
 // All routes require authentication
 router.use(authenticate);

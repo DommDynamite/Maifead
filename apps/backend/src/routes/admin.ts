@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import { authenticate, requireAdmin } from '../middleware/auth';
 import {
   getUsers,
@@ -10,7 +10,7 @@ import {
   deleteInviteCode,
 } from '../controllers/adminController';
 
-const router = Router();
+const router: RouterType = Router();
 
 // All admin routes require authentication and admin role
 router.use(authenticate);

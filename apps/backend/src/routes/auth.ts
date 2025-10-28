@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import { AuthController } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 
-const router = Router();
+const router: RouterType = Router();
 
 router.post('/signup', AuthController.signup);
 router.post('/login', AuthController.login);
