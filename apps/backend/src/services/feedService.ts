@@ -820,23 +820,47 @@ export class FeedService {
 
   /**
    * Create Reddit video embed HTML
+   * Note: Reddit videos use DASH format with separate audio/video streams
+   * The video will play without audio - users can click through to Reddit for audio
    */
-  private static createRedditVideoEmbed(videoUrl: string, content: string): string {
+  private static createRedditVideoEmbed(videoUrl: string, postLink?: string): string {
     // Reddit videos on v.redd.it need to be accessed with /DASH_720.mp4 or similar for direct playback
+    // Some videos don't have 720p, so we provide fallbacks to 480p, 360p, 240p, and 96p
     let playbackUrl = videoUrl;
 
-    // If it's a v.redd.it URL without a quality suffix, try common resolutions
+    // If it's a v.redd.it URL without a quality suffix, try multiple quality levels as fallbacks
     if (videoUrl.includes('v.redd.it') && !videoUrl.includes('DASH_')) {
-      // Try to find the actual video URL in the content
-      const dashMatch = content.match(/https?:\/\/v\.redd\.it\/[a-zA-Z0-9]+\/DASH_[0-9]+\.mp4/);
-      if (dashMatch) {
-        playbackUrl = dashMatch[0];
-      } else {
-        // Default to trying 720p
-        playbackUrl = `${videoUrl}/DASH_720.mp4`;
-      }
+      // Browser will try each source in order until one works
+      const qualities = ['720', '480', '360', '240', '96'];
+      const sources = qualities.map(q =>
+        `<source src="${videoUrl}/DASH_${q}.mp4" type="video/mp4">`
+      ).join('\n          ');
+
+      const linkUrl = postLink || videoUrl;
+      return `
+        <div class="reddit-video" style="margin: 1rem 0;">
+          <video
+            controls
+            preload="metadata"
+            style="width: 100%; max-width: 100%; height: auto; border-radius: 8px; background: #000;"
+          >
+            ${sources}
+            Your browser does not support the video tag.
+          </video>
+          <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fef3c7; border-radius: 6px; border-left: 3px solid #f59e0b;">
+            <p style="margin: 0; color: #92400e; font-size: 0.875rem;">
+              ⚠️ This video has no audio here.
+              <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" style="color: #d97706; font-weight: 500; text-decoration: underline;">
+                Click to watch with audio on Reddit
+              </a>
+            </p>
+          </div>
+        </div>
+      `.trim();
     }
 
+    // For URLs that already have a quality specified, use them as-is
+    const linkUrl = postLink || videoUrl;
     return `
       <div class="reddit-video" style="margin: 1rem 0;">
         <video
@@ -847,6 +871,14 @@ export class FeedService {
           <source src="${playbackUrl}" type="video/mp4">
           Your browser does not support the video tag.
         </video>
+        <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fef3c7; border-radius: 6px; border-left: 3px solid #f59e0b;">
+          <p style="margin: 0; color: #92400e; font-size: 0.875rem;">
+            ⚠️ This video has no audio here.
+            <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" style="color: #d97706; font-weight: 500; text-decoration: underline;">
+              Click to watch with audio on Reddit
+            </a>
+          </p>
+        </div>
       </div>
     `.trim();
   }
@@ -1160,8 +1192,8 @@ export class FeedService {
             // SECOND: Check for Reddit native videos
             const videoUrl = this.extractRedditVideoUrl(content);
             if (videoUrl) {
-              // Handle video posts
-              const videoEmbed = this.createRedditVideoEmbed(videoUrl, content);
+              // Handle video posts with audio support by passing the post link
+              const videoEmbed = this.createRedditVideoEmbed(videoUrl, item.link);
               // Remove any anchor tags wrapping video links to prevent navigation on click
               content = content.replace(/<a[^>]*href="[^"]*v\.redd\.it[^"]*"[^>]*>.*?<\/a>/gi, '');
               content = content.replace(/<a[^>]*href="[^"]*preview\.redd\.it[^"]*"[^>]*>.*?<\/a>/gi, '');

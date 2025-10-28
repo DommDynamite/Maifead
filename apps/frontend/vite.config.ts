@@ -23,15 +23,16 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'Maifead - RSS Feed Aggregator',
+        name: 'Maifead',
         short_name: 'Maifead',
-        description: 'A modern RSS feed aggregator for managing and reading your favorite content',
-        theme_color: '#14b8a6',
+        description: 'A modern feed aggregator for managing and reading your favorite content',
+        theme_color: '#00B4A6',
         background_color: '#0f172a',
         display: 'standalone',
-        orientation: 'portrait-primary',
+        orientation: 'any',
         scope: '/',
-        start_url: '/',
+        start_url: '/?source=pwa',
+        id: '/',
         icons: [
           {
             src: '/pwa-192x192.png',

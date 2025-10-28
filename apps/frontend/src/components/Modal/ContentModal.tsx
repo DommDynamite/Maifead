@@ -349,11 +349,13 @@ const Content = styled.div`
     width: 100% !important;
     max-width: 100% !important;
     height: auto !important;
+    max-height: 70vh !important; /* Constrain height to fit in modal */
     border-radius: ${props => props.theme.borderRadius.md};
     margin: ${props => props.theme.spacing[4]} 0 !important;
     background: ${props => props.theme.colors.background};
     display: block;
     cursor: default !important; /* Override zoom cursor */
+    object-fit: contain !important; /* Maintain aspect ratio */
   }
 
   /* Video containers */
