@@ -31,8 +31,8 @@ RUN pnpm --filter @maifead/backend build
 # Production image
 FROM node:20-alpine AS runner
 
-# Install build dependencies for better-sqlite3
-RUN apk add --no-cache python3 build-base gcc && ln -sf /usr/bin/python3 /usr/bin/python
+# Install build dependencies for better-sqlite3 and wget for healthcheck
+RUN apk add --no-cache python3 build-base gcc wget && ln -sf /usr/bin/python3 /usr/bin/python
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
