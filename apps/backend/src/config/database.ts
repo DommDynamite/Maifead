@@ -143,15 +143,9 @@ export const initializeDatabase = () => {
     // Column already exists, ignore error
   }
 
-  // Add important source columns for notification/priority feeds
+  // Add retention days for automatic cleanup
   try {
-    db.exec(`ALTER TABLE sources ADD COLUMN is_important BOOLEAN DEFAULT 0`);
-  } catch (error) {
-    // Column already exists, ignore error
-  }
-
-  try {
-    db.exec(`ALTER TABLE sources ADD COLUMN important_collection_id TEXT`);
+    db.exec(`ALTER TABLE sources ADD COLUMN retention_days INTEGER DEFAULT 30`);
   } catch (error) {
     // Column already exists, ignore error
   }
@@ -241,6 +235,13 @@ export const initializeDatabase = () => {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
+
+  // Add important flag to existing feads table if it doesn't exist
+  try {
+    db.exec(`ALTER TABLE feads ADD COLUMN is_important BOOLEAN DEFAULT 0`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
 
   // Fead sources junction table
   db.exec(`

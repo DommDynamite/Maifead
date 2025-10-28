@@ -25,9 +25,8 @@ export interface FeedSource {
   whitelistKeywords?: string[]; // Only show content matching these keywords
   blacklistKeywords?: string[]; // Hide content matching these keywords
 
-  // Important Source / Notifications
-  isImportant?: boolean; // Mark this source as important/priority
-  importantCollectionId?: string; // Collection to auto-add items from important sources
+  // Retention
+  retentionDays?: number; // Days to keep items (0 = forever, default: 30)
 
   // Status
   isEnabled: boolean;
