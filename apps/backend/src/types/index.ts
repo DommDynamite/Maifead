@@ -40,6 +40,8 @@ export interface Source {
   description?: string;
   category?: string;
   fetchInterval: number;
+  retentionDays?: number; // Days to keep items (0 = forever, default: 30)
+  suppressFromMainFeed?: boolean; // Exclude from main feed view
   lastFetchedAt?: Date;
   whitelistKeywords?: string[];
   blacklistKeywords?: string[];
@@ -110,6 +112,8 @@ export interface CreateSourceRequest {
   blueskyDid?: string;
   blueskyFeedUri?: string;
   category?: string;
+  retentionDays?: number;
+  suppressFromMainFeed?: boolean;
   whitelistKeywords?: string[];
   blacklistKeywords?: string[];
 }
@@ -119,6 +123,8 @@ export interface UpdateSourceRequest {
   category?: string;
   fetchInterval?: number;
   youtubeShortsFilter?: YoutubeShortsFilter;
+  retentionDays?: number;
+  suppressFromMainFeed?: boolean;
   whitelistKeywords?: string[];
   blacklistKeywords?: string[];
 }
