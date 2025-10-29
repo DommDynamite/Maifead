@@ -81,7 +81,7 @@ function AppContent() {
     setIsFeadModalOpen(true);
   };
 
-  const handleSaveFead = (feadData: { name: string; icon: string; sourceIds: string[] }) => {
+  const handleSaveFead = (feadData: { name: string; icon: string; isImportant?: boolean; sourceIds: string[] }) => {
     if (editingFead) {
       updateFead(editingFead.id, feadData);
     } else {

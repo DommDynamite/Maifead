@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../../stores/uiStore';
 import { useFeadStore } from '../../stores/feadStore';
 import { useFeedSourceStore } from '../../stores/feedSourceStore';
+import { useFeedStore } from '../../stores/feedStore';
 import type { Fead } from '@maifead/types';
 
 const Backdrop = styled(motion.div)`
@@ -124,6 +125,22 @@ const SourceCount = styled.div`
   color: ${props => props.theme.colors.textSecondary};
 `;
 
+const UnreadBadge = styled.span`
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: white;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  flex-shrink: 0;
+`;
+
 const ActionButtons = styled.div`
   display: flex;
   gap: ${props => props.theme.spacing[1]};
@@ -238,8 +255,9 @@ interface FeadsPanelProps {
 
 export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead }) => {
   const { isFeadsPanelOpen, toggleFeadsPanel, activeFeadId, setActiveFead } = useUIStore();
-  const { feads, deleteFead } = useFeadStore();
+  const { feads, deleteFead, getUnreadCountForFead } = useFeadStore();
   const { getSource } = useFeedSourceStore();
+  const { items: feedItems } = useFeedStore();
   const [expandedFeadId, setExpandedFeadId] = useState<string | null>(null);
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -311,6 +329,7 @@ export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead
                 feads.map(fead => {
                   const isActive = activeFeadId === fead.id;
                   const isExpanded = expandedFeadId === fead.id;
+                  const unreadCount = getUnreadCountForFead(fead.id, feedItems);
 
                   // Convert sourceIds to source names for display
                   const sourceNames = fead.sourceIds
@@ -335,6 +354,10 @@ export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead
                           <FeadName>{fead.name}</FeadName>
                           <SourceCount>{fead.sourceIds.length} sources</SourceCount>
                         </FeadInfo>
+
+                        {fead.isImportant && unreadCount > 0 && (
+                          <UnreadBadge>{unreadCount > 99 ? '99+' : unreadCount}</UnreadBadge>
+                        )}
 
                         <ActionButtons>
                           <ActionButton

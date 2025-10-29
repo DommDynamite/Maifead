@@ -143,6 +143,20 @@ export const initializeDatabase = () => {
     // Column already exists, ignore error
   }
 
+  // Add retention days for automatic cleanup
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN retention_days INTEGER DEFAULT 30`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
+  // Add suppress from main feed option
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN suppress_from_main_feed BOOLEAN DEFAULT 0`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
   // Add user role and status columns for admin management
   try {
     db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`);
@@ -228,6 +242,13 @@ export const initializeDatabase = () => {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
+
+  // Add important flag to existing feads table if it doesn't exist
+  try {
+    db.exec(`ALTER TABLE feads ADD COLUMN is_important BOOLEAN DEFAULT 0`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
 
   // Fead sources junction table
   db.exec(`

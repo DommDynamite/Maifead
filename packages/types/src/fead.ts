@@ -8,6 +8,7 @@ export interface Fead {
   name: string;
   icon: string; // Emoji or icon identifier
   sourceIds: string[]; // Array of FeedSource IDs (UUIDs from backend)
+  isImportant?: boolean; // Mark this Fead as important for notifications
   createdAt: Date;
   updatedAt: Date;
 }

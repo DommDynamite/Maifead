@@ -30,9 +30,18 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
           icon: s.iconUrl,
           type: s.type || 'rss',
           channelId: s.channelId,
+          subreddit: s.subreddit,
+          redditUsername: s.redditUsername,
+          redditSourceType: s.redditSourceType,
+          youtubeShortsFilter: s.youtubeShortsFilter,
+          blueskyHandle: s.blueskyHandle,
+          blueskyDid: s.blueskyDid,
+          blueskyFeedUri: s.blueskyFeedUri,
           isEnabled: true,
           whitelistKeywords: s.whitelistKeywords || [],
           blacklistKeywords: s.blacklistKeywords || [],
+          retentionDays: s.retentionDays ?? 30,
+          suppressFromMainFeed: s.suppressFromMainFeed || false,
           createdAt: new Date(s.createdAt),
           updatedAt: new Date(s.updatedAt),
         })),
@@ -55,6 +64,11 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
         redditUsername: input.redditUsername,
         redditSourceType: input.redditSourceType,
         youtubeShortsFilter: input.youtubeShortsFilter,
+        blueskyHandle: input.blueskyHandle,
+        blueskyDid: input.blueskyDid,
+        blueskyFeedUri: input.blueskyFeedUri,
+        retentionDays: input.retentionDays,
+        suppressFromMainFeed: input.suppressFromMainFeed,
       });
 
       const newSource: FeedSource = {
@@ -64,9 +78,18 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
         icon: source.iconUrl,
         type: source.type || 'rss',
         channelId: source.channelId,
+        subreddit: source.subreddit,
+        redditUsername: source.redditUsername,
+        redditSourceType: source.redditSourceType,
+        youtubeShortsFilter: source.youtubeShortsFilter,
+        blueskyHandle: source.blueskyHandle,
+        blueskyDid: source.blueskyDid,
+        blueskyFeedUri: source.blueskyFeedUri,
         isEnabled: true,
         whitelistKeywords: [],
         blacklistKeywords: [],
+        retentionDays: source.retentionDays ?? 30,
+        suppressFromMainFeed: source.suppressFromMainFeed || false,
         createdAt: new Date(source.createdAt),
         updatedAt: new Date(source.updatedAt),
       };
@@ -89,6 +112,8 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
         youtubeShortsFilter: updates.youtubeShortsFilter,
         whitelistKeywords: updates.whitelistKeywords,
         blacklistKeywords: updates.blacklistKeywords,
+        retentionDays: updates.retentionDays,
+        suppressFromMainFeed: updates.suppressFromMainFeed,
       });
 
       set(state => ({
@@ -97,8 +122,11 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
             ? {
                 ...source,
                 name: updated.name,
+                youtubeShortsFilter: updated.youtubeShortsFilter,
                 whitelistKeywords: updated.whitelistKeywords || [],
                 blacklistKeywords: updated.blacklistKeywords || [],
+                retentionDays: updated.retentionDays ?? source.retentionDays,
+                suppressFromMainFeed: updated.suppressFromMainFeed ?? source.suppressFromMainFeed,
                 updatedAt: new Date(updated.updatedAt),
               }
             : source

@@ -183,8 +183,13 @@ export const FeedView: React.FC = () => {
       }
     } else if (activeView === 'saved') {
       items = items.filter(item => item.isSaved === true);
+    } else if (activeView === 'all') {
+      // For 'all' view, filter out items from sources that are suppressed from main feed
+      items = items.filter(item => {
+        const source = sources.find(s => s.id === (item as any).sourceId);
+        return !source?.suppressFromMainFeed;
+      });
     }
-    // 'all' view shows everything (no additional filtering)
 
     // STEP 3: Apply global search filter
     if (searchQuery.trim()) {

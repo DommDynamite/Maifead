@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cron from 'node-cron';
 import { initializeDatabase } from './config/database.js';
 import { FeedService } from './services/feedService.js';
+import { CleanupService } from './services/cleanupService.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -66,6 +67,9 @@ cron.schedule(fetchInterval, async () => {
     console.error('Error in scheduled feed fetch:', error);
   }
 });
+
+// Schedule periodic cleanup of old items (nightly at 2 AM)
+CleanupService.scheduleCleanup();
 
 // Start server - listen on all network interfaces for mobile access
 app.listen(PORT, '0.0.0.0', () => {

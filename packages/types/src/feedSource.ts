@@ -25,6 +25,12 @@ export interface FeedSource {
   whitelistKeywords?: string[]; // Only show content matching these keywords
   blacklistKeywords?: string[]; // Hide content matching these keywords
 
+  // Retention
+  retentionDays?: number; // Days to keep items (0 = forever, default: 30)
+
+  // Display Options
+  suppressFromMainFeed?: boolean; // Exclude from main feed view (default: false)
+
   // Status
   isEnabled: boolean;
   lastFetchedAt?: Date;
