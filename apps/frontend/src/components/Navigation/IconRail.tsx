@@ -5,6 +5,8 @@ import { Home, Library, Folder, Settings, User, LogOut } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useFeadStore } from '../../stores/feadStore';
+import { useFeedStore } from '../../stores/feedStore';
 import { ThemeToggle } from '../ThemeToggle';
 
 const RailContainer = styled.aside`
@@ -82,6 +84,25 @@ const Tooltip = styled.span`
   }
 `;
 
+const NotificationBadge = styled.span`
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: white;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
+`;
+
 const Divider = styled.div`
   width: 32px;
   height: 1px;
@@ -109,9 +130,14 @@ export const IconRail: React.FC = () => {
     isCollectionsPanelOpen,
   } = useUIStore();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { getTotalImportantUnreadCount } = useFeadStore();
+  const { items: feedItems } = useFeedStore();
 
   const isOnSourcesPage = location.pathname === '/sources';
   const isOnFeedPage = location.pathname === '/';
+
+  // Calculate total unread count for important Feads
+  const importantUnreadCount = getTotalImportantUnreadCount(feedItems);
 
   const handleAllFeedsClick = () => {
     if (location.pathname !== '/') {
@@ -172,6 +198,11 @@ export const IconRail: React.FC = () => {
           title="Feads (Presets)"
         >
           <Library />
+          {importantUnreadCount > 0 && (
+            <NotificationBadge>
+              {importantUnreadCount > 99 ? '99+' : importantUnreadCount}
+            </NotificationBadge>
+          )}
           <Tooltip>Feads</Tooltip>
         </IconButton>
 

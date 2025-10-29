@@ -28,6 +28,9 @@ export interface FeedSource {
   // Retention
   retentionDays?: number; // Days to keep items (0 = forever, default: 30)
 
+  // Display Options
+  suppressFromMainFeed?: boolean; // Exclude from main feed view (default: false)
+
   // Status
   isEnabled: boolean;
   lastFetchedAt?: Date;

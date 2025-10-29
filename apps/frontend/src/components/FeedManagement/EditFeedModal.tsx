@@ -151,6 +151,13 @@ const SectionTitle = styled.h3`
   color: ${props => props.theme.colors.text};
 `;
 
+const Checkbox = styled.input`
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: ${props => props.theme.colors.primary};
+`;
+
 const Footer = styled.div`
   display: flex;
   align-items: center;
@@ -205,6 +212,8 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
   const [youtubeShortsFilter, setYoutubeShortsFilter] = useState<'all' | 'exclude' | 'only'>('all');
   const [whitelistKeywords, setWhitelistKeywords] = useState<string[]>([]);
   const [blacklistKeywords, setBlacklistKeywords] = useState<string[]>([]);
+  const [retentionDays, setRetentionDays] = useState<number>(30);
+  const [suppressFromMainFeed, setSuppressFromMainFeed] = useState(false);
 
   // Sync state with source prop when it changes
   useEffect(() => {
@@ -213,6 +222,8 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
       setYoutubeShortsFilter(source.youtubeShortsFilter || 'all');
       setWhitelistKeywords(source.whitelistKeywords || []);
       setBlacklistKeywords(source.blacklistKeywords || []);
+      setRetentionDays(source.retentionDays ?? 30);
+      setSuppressFromMainFeed(source.suppressFromMainFeed || false);
     }
   }, [source]);
 
@@ -223,6 +234,8 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
       name: name.trim(),
       whitelistKeywords: whitelistKeywords,
       blacklistKeywords: blacklistKeywords,
+      retentionDays: retentionDays,
+      suppressFromMainFeed: suppressFromMainFeed,
     };
 
     // Only include youtubeShortsFilter for YouTube sources
@@ -331,6 +344,36 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
                   onWhitelistChange={setWhitelistKeywords}
                   onBlacklistChange={setBlacklistKeywords}
                 />
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="retention-days">Item Retention</Label>
+                <Input
+                  id="retention-days"
+                  type="number"
+                  min="0"
+                  value={retentionDays}
+                  onChange={(e) => setRetentionDays(parseInt(e.target.value) || 0)}
+                  placeholder="30"
+                />
+                <HelpText>
+                  Number of days to keep items (0 = keep forever). Items in collections are never deleted.
+                </HelpText>
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="suppress-from-main" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <Checkbox
+                    id="suppress-from-main"
+                    type="checkbox"
+                    checked={suppressFromMainFeed}
+                    onChange={(e) => setSuppressFromMainFeed(e.target.checked)}
+                  />
+                  <span>Suppress from main feed</span>
+                </Label>
+                <HelpText>
+                  Exclude this source from the main feed view. It will still be accessible in custom Feads.
+                </HelpText>
               </FormGroup>
             </Content>
 

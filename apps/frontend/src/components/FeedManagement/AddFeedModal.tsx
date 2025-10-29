@@ -123,6 +123,44 @@ const FilterSection = styled(motion.div)`
   border-radius: ${props => props.theme.borderRadius.base};
 `;
 
+const Label = styled.label`
+  font-size: ${props => props.theme.fontSizes.sm};
+  font-weight: ${props => props.theme.fontWeights.medium};
+  color: ${props => props.theme.colors.text};
+`;
+
+const Input = styled.input`
+  padding: ${props => props.theme.spacing[3]} ${props => props.theme.spacing[4]};
+  background: ${props => props.theme.colors.background};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.base};
+  color: ${props => props.theme.colors.text};
+  font-size: ${props => props.theme.fontSizes.base};
+  transition: all ${props => props.theme.transitions.fast};
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
+
+  &::placeholder {
+    color: ${props => props.theme.colors.textTertiary};
+  }
+`;
+
+const HelpText = styled.p`
+  font-size: ${props => props.theme.fontSizes.xs};
+  color: ${props => props.theme.colors.textSecondary};
+  margin: 0;
+`;
+
+const Checkbox = styled.input`
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: ${props => props.theme.colors.primary};
+`;
+
 const Footer = styled.div`
   display: flex;
   align-items: center;
@@ -181,6 +219,8 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
   const [whitelistKeywords, setWhitelistKeywords] = useState<string[]>([]);
   const [blacklistKeywords, setBlacklistKeywords] = useState<string[]>([]);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [retentionDays, setRetentionDays] = useState<number>(30);
+  const [suppressFromMainFeed, setSuppressFromMainFeed] = useState(false);
 
   const handleSubmit = () => {
     // Validation based on source type
@@ -210,6 +250,8 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
       isEnabled: true,
       whitelistKeywords: whitelistKeywords.length > 0 ? whitelistKeywords : undefined,
       blacklistKeywords: blacklistKeywords.length > 0 ? blacklistKeywords : undefined,
+      retentionDays,
+      suppressFromMainFeed,
       name: '',
       url: '',
     };
@@ -261,6 +303,8 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
     setWhitelistKeywords([]);
     setBlacklistKeywords([]);
     setIsFilterExpanded(false);
+    setRetentionDays(30);
+    setSuppressFromMainFeed(false);
     onClose();
   };
 
@@ -364,6 +408,38 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
                     </FilterSection>
                   )}
                 </AnimatePresence>
+              </FormGroup>
+
+              {/* Item Retention */}
+              <FormGroup>
+                <Label htmlFor="retention-days">Item Retention</Label>
+                <Input
+                  id="retention-days"
+                  type="number"
+                  min="0"
+                  value={retentionDays}
+                  onChange={(e) => setRetentionDays(parseInt(e.target.value) || 0)}
+                  placeholder="30"
+                />
+                <HelpText>
+                  Number of days to keep items (0 = keep forever). Default: 30 days. Items in collections are never deleted.
+                </HelpText>
+              </FormGroup>
+
+              {/* Suppress from Main Feed */}
+              <FormGroup>
+                <Label htmlFor="suppress-from-main" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <Checkbox
+                    id="suppress-from-main"
+                    type="checkbox"
+                    checked={suppressFromMainFeed}
+                    onChange={(e) => setSuppressFromMainFeed(e.target.checked)}
+                  />
+                  <span>Suppress from main feed</span>
+                </Label>
+                <HelpText>
+                  Exclude this source from the main feed view. It will still be accessible in custom Feads.
+                </HelpText>
               </FormGroup>
             </Content>
 

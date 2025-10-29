@@ -363,7 +363,7 @@ const COMMON_EMOJIS = [
 interface FeadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (fead: { name: string; icon: string; sourceIds: string[] }) => void;
+  onSave: (fead: { name: string; icon: string; isImportant?: boolean; sourceIds: string[] }) => void;
   editFead?: Fead | null;
 }
 
@@ -373,6 +373,7 @@ export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, e
 
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('⚡');
+  const [isImportant, setIsImportant] = useState(false);
   const [selectedSourceIds, setSelectedSourceIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
@@ -384,10 +385,12 @@ export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, e
     if (editFead) {
       setName(editFead.name);
       setIcon(editFead.icon);
+      setIsImportant(editFead.isImportant || false);
       setSelectedSourceIds(new Set(editFead.sourceIds));
     } else {
       setName('');
       setIcon('⚡');
+      setIsImportant(false);
       setSelectedSourceIds(new Set());
     }
     setSearchQuery('');
@@ -489,6 +492,7 @@ export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, e
       onSave({
         name: name.trim(),
         icon,
+        isImportant,
         sourceIds: Array.from(selectedSourceIds),
       });
       onClose();
@@ -604,6 +608,18 @@ export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, e
                     </EmojiButton>
                   ))}
                 </EmojiGrid>
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="fead-important" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <Checkbox
+                    id="fead-important"
+                    type="checkbox"
+                    checked={isImportant}
+                    onChange={(e) => setIsImportant(e.target.checked)}
+                  />
+                  <span>Mark as Important (get notifications for unread items)</span>
+                </Label>
               </FormGroup>
 
               <FormGroup>

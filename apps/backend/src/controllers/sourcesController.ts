@@ -33,6 +33,7 @@ export class SourcesController {
         category: s.category,
         fetchInterval: s.fetch_interval,
         retentionDays: s.retention_days ?? 30,
+        suppressFromMainFeed: s.suppress_from_main_feed || false,
         lastFetchedAt: s.last_fetched_at ? new Date(s.last_fetched_at) : null,
         whitelistKeywords: s.whitelist_keywords ? JSON.parse(s.whitelist_keywords) : [],
         blacklistKeywords: s.blacklist_keywords ? JSON.parse(s.blacklist_keywords) : [],
@@ -51,7 +52,7 @@ export class SourcesController {
   static async create(req: Request<{}, {}, CreateSourceRequest>, res: Response) {
     try {
       const userId = (req as any).userId;
-      const { name, url, type, channelId, subreddit, redditUsername, redditSourceType, youtubeShortsFilter, category, whitelistKeywords, blacklistKeywords } = req.body;
+      const { name, url, type, channelId, subreddit, redditUsername, redditSourceType, youtubeShortsFilter, category, retentionDays, suppressFromMainFeed, whitelistKeywords, blacklistKeywords } = req.body;
 
       if (!name || !url) {
         return res.status(400).json({ error: 'Name and URL are required' });
@@ -163,8 +164,8 @@ export class SourcesController {
         : null;
 
       db.prepare(`
-        INSERT INTO sources (id, user_id, name, url, type, channel_id, subreddit, reddit_username, reddit_source_type, youtube_shorts_filter, bluesky_handle, category, icon_url, whitelist_keywords, blacklist_keywords, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO sources (id, user_id, name, url, type, channel_id, subreddit, reddit_username, reddit_source_type, youtube_shorts_filter, bluesky_handle, category, icon_url, retention_days, suppress_from_main_feed, whitelist_keywords, blacklist_keywords, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         sourceId,
         userId,
@@ -179,6 +180,8 @@ export class SourcesController {
         extractedBlueskyHandle || null,
         category || null,
         iconUrl || null,
+        retentionDays ?? 30,
+        suppressFromMainFeed ? 1 : 0,
         whitelistJson,
         blacklistJson,
         now,
@@ -228,6 +231,7 @@ export class SourcesController {
         category: source.category,
         fetchInterval: source.fetch_interval,
         retentionDays: source.retention_days ?? 30,
+        suppressFromMainFeed: source.suppress_from_main_feed || false,
         lastFetchedAt: source.last_fetched_at ? new Date(source.last_fetched_at) : null,
         whitelistKeywords: source.whitelist_keywords ? JSON.parse(source.whitelist_keywords) : [],
         blacklistKeywords: source.blacklist_keywords ? JSON.parse(source.blacklist_keywords) : [],
@@ -247,7 +251,7 @@ export class SourcesController {
     try {
       const userId = (req as any).userId;
       const { id } = req.params;
-      const { name, category, fetchInterval, youtubeShortsFilter, retentionDays, whitelistKeywords, blacklistKeywords } = req.body;
+      const { name, category, fetchInterval, youtubeShortsFilter, retentionDays, suppressFromMainFeed, whitelistKeywords, blacklistKeywords } = req.body;
 
       // Verify ownership
       const source = db.prepare('SELECT * FROM sources WHERE id = ? AND user_id = ?')
@@ -280,6 +284,10 @@ export class SourcesController {
       if (retentionDays !== undefined) {
         updates.push('retention_days = ?');
         values.push(retentionDays);
+      }
+      if (suppressFromMainFeed !== undefined) {
+        updates.push('suppress_from_main_feed = ?');
+        values.push(suppressFromMainFeed ? 1 : 0);
       }
       if (whitelistKeywords !== undefined) {
         updates.push('whitelist_keywords = ?');
@@ -319,6 +327,7 @@ export class SourcesController {
         description: updated.description,
         category: updated.category,
         retentionDays: updated.retention_days ?? 30,
+        suppressFromMainFeed: updated.suppress_from_main_feed || false,
         fetchInterval: updated.fetch_interval,
         lastFetchedAt: updated.last_fetched_at ? new Date(updated.last_fetched_at) : null,
         whitelistKeywords: updated.whitelist_keywords ? JSON.parse(updated.whitelist_keywords) : [],
