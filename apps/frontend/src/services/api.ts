@@ -111,14 +111,14 @@ class ApiClient {
     return this.request<any[]>('/sources');
   }
 
-  async createSource(data: { name: string; url: string; type?: string; channelId?: string; subreddit?: string; redditUsername?: string; redditSourceType?: string; youtubeShortsFilter?: string; category?: string }) {
+  async createSource(data: { name: string; url: string; type?: string; channelId?: string; subreddit?: string; redditUsername?: string; redditSourceType?: string; youtubeShortsFilter?: string; blueskyHandle?: string; blueskyDid?: string; blueskyFeedUri?: string; category?: string; retentionDays?: number; suppressFromMainFeed?: boolean; whitelistKeywords?: string[]; blacklistKeywords?: string[] }) {
     return this.request<any>('/sources', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateSource(id: string, data: { name?: string; category?: string; youtubeShortsFilter?: string; whitelistKeywords?: string[]; blacklistKeywords?: string[] }) {
+  async updateSource(id: string, data: { name?: string; category?: string; youtubeShortsFilter?: string; retentionDays?: number; suppressFromMainFeed?: boolean; whitelistKeywords?: string[]; blacklistKeywords?: string[] }) {
     return this.request<any>(`/sources/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -237,14 +237,14 @@ class ApiClient {
     return this.request<any>(`/feads/${id}`);
   }
 
-  async createFead(data: { name: string; icon: string; sourceIds: string[] }) {
+  async createFead(data: { name: string; icon: string; isImportant?: boolean; sourceIds: string[] }) {
     return this.request<any>('/feads', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateFead(id: string, data: { name?: string; icon?: string; sourceIds?: string[] }) {
+  async updateFead(id: string, data: { name?: string; icon?: string; isImportant?: boolean; sourceIds?: string[] }) {
     return this.request<any>(`/feads/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),

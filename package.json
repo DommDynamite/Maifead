@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "pnpm --parallel --filter \"./apps/**\" dev",
     "build": "pnpm --recursive --filter \"./apps/**\" build",
+    "type-check": "pnpm --recursive --filter \"./apps/**\" --filter \"./packages/**\" type-check",
     "lint": "pnpm --recursive lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
