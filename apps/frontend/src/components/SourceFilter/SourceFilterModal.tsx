@@ -6,6 +6,7 @@ import { useUIStore } from '../../stores/uiStore';
 import { useFeedSourceStore } from '../../stores/feedSourceStore';
 import { useFeadStore } from '../../stores/feadStore';
 import { useFeedStore } from '../../stores/feedStore';
+import { applySourceFilters } from '../../utils/filterUtils';
 
 const Backdrop = styled(motion.div)`
   position: fixed;
@@ -259,20 +260,23 @@ export const SourceFilterModal: React.FC = () => {
     return feedSources;
   }, [activeView, activeFeadId, feedSources, feads]);
 
-  // Group sources by type and calculate UNREAD counts
+  // Group sources by type and calculate UNREAD counts (respecting filters)
   const categorizedSources = useMemo(() => {
     const sourceMap = new Map<
       string,
       { name: string; count: number; icon?: string; id: string; type: string }
     >();
 
-    // Count UNREAD items per source from available sources only
+    // Count UNREAD items per source that pass all filters
     feedItems.forEach(item => {
       // Skip read items - only count unread
       if (item.isRead) return;
 
       const source = availableSources.find(s => s.id === item.sourceId);
       if (source) {
+        // Apply source filters (whitelist/blacklist)
+        if (!applySourceFilters(item, source)) return;
+
         const existing = sourceMap.get(source.name);
         if (existing) {
           existing.count++;
