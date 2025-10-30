@@ -282,11 +282,12 @@ export const FeedView: React.FC = () => {
     sortBy,
   ]);
 
-  const handleCardClick = (item: ContentItem) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
+  const handleCardClick = async (item: ContentItem) => {
     // Mark as read when opening
-    markItemRead(item.id, true);
+    await markItemRead(item.id, true);
+    // Set selected item after marking as read so modal gets updated state
+    setSelectedItem({ ...item, isRead: true });
+    setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {

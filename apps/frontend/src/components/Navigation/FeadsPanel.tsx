@@ -292,13 +292,13 @@ export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.08 }}
             onClick={handleBackdropClick}
           />
           <Panel
-            initial={{ x: -280 }}
+            initial={{ x: -340 }}
             animate={{ x: 0 }}
-            exit={{ x: -280 }}
+            exit={{ x: -340 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           >
             <Header>

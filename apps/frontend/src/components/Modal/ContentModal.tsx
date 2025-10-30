@@ -28,6 +28,8 @@ const Backdrop = styled(motion.div)`
   @media (max-width: ${props => props.theme.breakpoints.md}) {
     padding: 0;
     align-items: flex-start;
+    overflow-y: hidden;
+    bottom: 60px; /* Align with bottom nav bar edge (60px tall) */
   }
 `;
 
@@ -53,8 +55,9 @@ const ModalContainer = styled(motion.div)`
 
   @media (max-width: ${props => props.theme.breakpoints.md}) {
     max-width: 100%;
-    max-height: 100vh;
     border-radius: 0;
+    height: 100%;
+    border-bottom: 1px solid ${props => props.theme.colors.border};
   }
 `;
 
@@ -132,9 +135,11 @@ const ModalContent = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: ${props => props.theme.spacing[6]};
+  min-height: 0;
 
   @media (max-width: ${props => props.theme.breakpoints.md}) {
     padding: ${props => props.theme.spacing[4]};
+    padding-bottom: 0;
   }
 `;
 
@@ -306,6 +311,16 @@ const Content = styled.div`
   /* TikTok embed styling */
   .tiktok-embed {
     margin: ${props => props.theme.spacing[4]} auto !important;
+    max-height: 70vh;
+    max-width: min(400px, 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    iframe {
+      max-height: 70vh !important;
+      max-width: 100% !important;
+    }
   }
 
   /* YouTube embed styling */
@@ -313,10 +328,29 @@ const Content = styled.div`
     margin: ${props => props.theme.spacing[4]} 0 !important;
     border-radius: ${props => props.theme.borderRadius.md};
     overflow: hidden;
+    max-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
 
     iframe {
       margin: 0 !important;
       border-radius: ${props => props.theme.borderRadius.md};
+      max-height: 70vh;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+    }
+
+    /* Portrait videos (Shorts, TikTok) - constrain height */
+    &[data-aspect="portrait"] iframe,
+    &:has(iframe[src*="shorts"]) iframe {
+      aspect-ratio: 9 / 16;
+      max-width: min(400px, 100%);
+      max-height: 70vh;
+      height: 70vh;
+      margin: 0 auto;
     }
 
     /* Description below YouTube video */
@@ -339,11 +373,20 @@ const Content = styled.div`
     overflow: hidden;
     background: #000;
     position: relative;
+    max-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     iframe {
       margin: 0 !important;
       border-radius: ${props => props.theme.borderRadius.md};
       pointer-events: auto !important;
+      max-height: 70vh;
+      max-width: min(400px, 100%);
+      width: 100%;
+      height: auto;
+      aspect-ratio: 9 / 16;
     }
   }
 
@@ -512,7 +555,7 @@ const ModalFooter = styled.footer`
   gap: ${props => props.theme.spacing[3]};
   padding: ${props => props.theme.spacing[6]};
   border-top: 1px solid ${props => props.theme.colors.border};
-  flex-shrink: 0;
+  margin-top: ${props => props.theme.spacing[6]};
 
   @media (max-width: ${props => props.theme.breakpoints.md}) {
     padding: ${props => props.theme.spacing[4]};
@@ -562,8 +605,15 @@ const ActionButton = styled.button<{ $primary?: boolean }>`
   }
 
   @media (max-width: ${props => props.theme.breakpoints.md}) {
-    flex: 1 1 auto;
-    min-width: 140px;
+    flex: 1;
+    min-width: 0;
+    padding: ${props => props.theme.spacing[3]};
+  }
+`;
+
+const ButtonText = styled.span`
+  @media (max-width: ${props => props.theme.breakpoints.md}) {
+    display: none;
   }
 `;
 
@@ -672,7 +722,6 @@ const GalleryCounter = styled.div`
 `;
 
 export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClose, onToggleRead }) => {
-  const { readItemIds } = useUIStore();
   const contentRef = useRef<HTMLDivElement>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -824,7 +873,8 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
 
   const timeAgo = formatDistanceToNow(item.publishedAt, { addSuffix: true });
   const primaryMedia = item.media?.[0];
-  const isRead = readItemIds.includes(item.id);
+  // Use item.isRead directly from the item prop, which is updated in real-time
+  const isRead = item.isRead || false;
 
   // Check if content contains YouTube embed
   const hasYouTubeEmbed = item.content.html?.includes('youtube-embed') || item.content.html?.includes('youtube.com/embed');
@@ -847,6 +897,7 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
 
   const handleToggleRead = () => {
     onToggleRead(item.id);
+    onClose();
   };
 
   const handleOpenOriginal = () => {
@@ -886,49 +937,24 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
               <Title>{item.title}</Title>
               {item.author && <Author>By {item.author.name}</Author>}
 
-              {/* Only show thumbnail if content doesn't have video embed */}
-              {!hasVideoEmbed && primaryMedia && primaryMedia.type === 'image' && (
-                <MediaContainer>
-                  <MediaImage
-                    src={primaryMedia.url}
-                    alt={primaryMedia.alt || item.title}
-                    onClick={() => setLightboxImage(primaryMedia.url)}
-                  />
-                </MediaContainer>
-              )}
-
-              {/* Only show video embed if content doesn't have embedded video */}
-              {!hasVideoEmbed && primaryMedia && primaryMedia.type === 'video' && primaryMedia.embedUrl && (
-                <MediaContainer>
-                  <VideoEmbed>
-                    <iframe
-                      src={primaryMedia.embedUrl}
-                      title={item.title}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </VideoEmbed>
-                </MediaContainer>
-              )}
-
-              {/* Content includes YouTube embed with description for YouTube sources */}
+              {/* Content includes all media (images, videos, embeds) */}
               <Content ref={contentRef} dangerouslySetInnerHTML={{ __html: item.content.html || item.content.text }} />
-            </ModalContent>
 
-            <ModalFooter>
-              <ActionButton onClick={handleToggleRead}>
-                <CheckCircle />
-                {isRead ? 'Mark Unread' : 'Mark Read'}
-              </ActionButton>
-              <ActionButton>
-                <BookmarkPlus />
-                Save
-              </ActionButton>
-              <ActionButton $primary onClick={handleOpenOriginal}>
-                <ExternalLink />
-                Open Original
-              </ActionButton>
-            </ModalFooter>
+              <ModalFooter>
+                <ActionButton onClick={handleToggleRead} aria-label={isRead ? 'Mark Unread' : 'Mark Read'}>
+                  <CheckCircle />
+                  <ButtonText>{isRead ? 'Mark Unread' : 'Mark Read'}</ButtonText>
+                </ActionButton>
+                <ActionButton aria-label="Save">
+                  <BookmarkPlus />
+                  <ButtonText>Save</ButtonText>
+                </ActionButton>
+                <ActionButton $primary onClick={handleOpenOriginal} aria-label="Open Original">
+                  <ExternalLink />
+                  <ButtonText>Open Original</ButtonText>
+                </ActionButton>
+              </ModalFooter>
+            </ModalContent>
           </ModalContainer>
         </Backdrop>
       )}

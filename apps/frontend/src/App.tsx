@@ -59,6 +59,25 @@ function AppContent() {
     initApp();
   }, [initialize]);
 
+  // Lock screen orientation to portrait when running as PWA
+  useEffect(() => {
+    const lockOrientation = async () => {
+      // Check if running as PWA (standalone mode)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+      if (isStandalone && 'orientation' in screen && 'lock' in screen.orientation) {
+        try {
+          await (screen.orientation as any).lock('portrait-primary');
+          console.log('Screen orientation locked to portrait');
+        } catch (error) {
+          console.log('Could not lock screen orientation:', error);
+        }
+      }
+    };
+
+    lockOrientation();
+  }, []);
+
   // Fetch sources, collections, feads, and feed items when authenticated
   useEffect(() => {
     if (isAuthenticated) {

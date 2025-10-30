@@ -144,6 +144,11 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
       set(state => ({
         sources: state.sources.filter(source => source.id !== id),
       }));
+
+      // Refetch feads to update their sourceIds after source deletion
+      // Import dynamically to avoid circular dependency
+      const { useFeadStore } = await import('./feadStore');
+      await useFeadStore.getState().fetchFeads();
     } catch (error) {
       console.error('Failed to delete source:', error);
       throw error;

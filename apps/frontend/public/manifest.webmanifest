@@ -1,0 +1,24 @@
+{
+  "name": "Maifead",
+  "short_name": "Maifead",
+  "description": "A modern feed aggregator for managing and reading your favorite content from Reddit, YouTube, Bluesky, and RSS feeds",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#00B4A6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["news", "productivity"],
+  "prefer_related_applications": false
+}

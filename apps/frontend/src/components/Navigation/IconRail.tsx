@@ -1,13 +1,12 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Library, Folder, Settings, User, LogOut } from 'lucide-react';
+import { Home, Library, Folder, Settings, User, LogOut, Radio } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useFeadStore } from '../../stores/feadStore';
 import { useFeedStore } from '../../stores/feedStore';
-import { ThemeToggle } from '../ThemeToggle';
 
 const RailContainer = styled.aside`
   position: fixed;
@@ -219,7 +218,6 @@ export const IconRail: React.FC = () => {
 
       <BottomSection>
         <Divider />
-        <ThemeToggle />
 
         {isAuthenticated ? (
           <>
@@ -257,7 +255,7 @@ export const IconRail: React.FC = () => {
           aria-label="Manage Sources"
           title="Manage Sources"
         >
-          <Settings />
+          <Radio />
           <Tooltip>Manage Sources</Tooltip>
         </IconButton>
       </BottomSection>

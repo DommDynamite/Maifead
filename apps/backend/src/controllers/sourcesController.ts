@@ -357,6 +357,10 @@ export class SourcesController {
         return res.status(404).json({ error: 'Source not found' });
       }
 
+      // Remove source from all feads first
+      db.prepare('DELETE FROM fead_sources WHERE source_id = ?').run(id);
+
+      // Then delete the source itself (cascade will handle feed_items)
       db.prepare('DELETE FROM sources WHERE id = ?').run(id);
 
       res.json({ message: 'Source deleted successfully' });
