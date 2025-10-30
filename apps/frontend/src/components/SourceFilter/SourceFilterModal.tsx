@@ -259,15 +259,18 @@ export const SourceFilterModal: React.FC = () => {
     return feedSources;
   }, [activeView, activeFeadId, feedSources, feads]);
 
-  // Group sources by type and calculate counts
+  // Group sources by type and calculate UNREAD counts
   const categorizedSources = useMemo(() => {
     const sourceMap = new Map<
       string,
       { name: string; count: number; icon?: string; id: string; type: string }
     >();
 
-    // Count items per source from available sources only
+    // Count UNREAD items per source from available sources only
     feedItems.forEach(item => {
+      // Skip read items - only count unread
+      if (item.isRead) return;
+
       const source = availableSources.find(s => s.id === item.sourceId);
       if (source) {
         const existing = sourceMap.get(source.name);
@@ -374,7 +377,7 @@ export const SourceFilterModal: React.FC = () => {
           {isExpanded ? <ChevronDown /> : <ChevronRight />}
           <CategoryTitle>{categoryName}</CategoryTitle>
           <CategoryCount>
-            {sources.length} {sources.length === 1 ? 'source' : 'sources'} · {categoryTotal} items
+            {sources.length} {sources.length === 1 ? 'source' : 'sources'} · {categoryTotal} unread
           </CategoryCount>
         </CategoryHeader>
         {isExpanded && (
