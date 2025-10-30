@@ -9,6 +9,11 @@ build
 out
 *.tsbuildinfo
 
+# TypeScript compiled files (in source directories)
+packages/types/src/**/*.js
+packages/types/src/**/*.d.ts
+packages/types/src/**/*.d.ts.map
+
 # Environment variables
 .env
 .env.local
