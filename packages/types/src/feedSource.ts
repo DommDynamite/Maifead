@@ -16,6 +16,7 @@ export interface FeedSource {
   subreddit?: string; // Reddit subreddit name (e.g., programming)
   redditUsername?: string; // Reddit username (e.g., spez)
   redditSourceType?: RedditSourceType; // Whether Reddit source is subreddit or user
+  redditMinUpvotes?: number; // Minimum upvotes for Reddit posts (e.g., 100)
   youtubeShortsFilter?: YoutubeShortsFilter; // YouTube shorts filtering
   blueskyHandle?: string; // Bluesky handle (e.g., user.bsky.social)
   blueskyDid?: string; // Bluesky DID (Decentralized Identifier) for future API use

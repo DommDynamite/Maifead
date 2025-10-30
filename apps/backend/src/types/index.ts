@@ -32,6 +32,7 @@ export interface Source {
   subreddit?: string; // Reddit subreddit name
   redditUsername?: string; // Reddit username
   redditSourceType?: RedditSourceType; // Whether Reddit source is subreddit or user
+  redditMinUpvotes?: number; // Minimum upvotes for Reddit posts
   youtubeShortsFilter?: YoutubeShortsFilter; // YouTube shorts filtering
   blueskyHandle?: string; // Bluesky handle (e.g., user.bsky.social)
   blueskyDid?: string; // Bluesky DID (Decentralized Identifier)
@@ -107,6 +108,7 @@ export interface CreateSourceRequest {
   subreddit?: string;
   redditUsername?: string;
   redditSourceType?: RedditSourceType;
+  redditMinUpvotes?: number;
   youtubeShortsFilter?: YoutubeShortsFilter;
   blueskyHandle?: string;
   blueskyDid?: string;
@@ -122,6 +124,7 @@ export interface UpdateSourceRequest {
   name?: string;
   category?: string;
   fetchInterval?: number;
+  redditMinUpvotes?: number;
   youtubeShortsFilter?: YoutubeShortsFilter;
   retentionDays?: number;
   suppressFromMainFeed?: boolean;

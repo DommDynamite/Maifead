@@ -5,9 +5,11 @@ interface RedditSourceFormProps {
   url: string;
   name: string;
   sourceType: 'subreddit' | 'user';
+  minUpvotes?: number;
   onUrlChange: (url: string) => void;
   onNameChange: (name: string) => void;
   onSourceTypeChange: (type: 'subreddit' | 'user') => void;
+  onMinUpvotesChange?: (minUpvotes: number | undefined) => void;
 }
 
 const FormGroup = styled.div`
@@ -90,9 +92,11 @@ export const RedditSourceForm: React.FC<RedditSourceFormProps> = ({
   url,
   name,
   sourceType,
+  minUpvotes,
   onUrlChange,
   onNameChange,
   onSourceTypeChange,
+  onMinUpvotesChange,
 }) => {
   return (
     <>
@@ -167,6 +171,27 @@ export const RedditSourceForm: React.FC<RedditSourceFormProps> = ({
           placeholder={sourceType === 'subreddit' ? 'e.g., Programming' : 'e.g., Spez Posts'}
         />
         <HelpText>Leave empty to use {sourceType === 'subreddit' ? 'subreddit' : 'username'} as name</HelpText>
+      </FormGroup>
+
+      <FormGroup>
+        <Label htmlFor="reddit-min-upvotes">Minimum Upvotes (Optional)</Label>
+        <Input
+          id="reddit-min-upvotes"
+          type="number"
+          min="0"
+          value={minUpvotes ?? ''}
+          onChange={e => {
+            const value = e.target.value;
+            console.log('[RedditSourceForm] Input changed - raw value:', value);
+            if (onMinUpvotesChange) {
+              const parsedValue = value === '' ? undefined : parseInt(value, 10);
+              console.log('[RedditSourceForm] Calling onMinUpvotesChange with:', parsedValue);
+              onMinUpvotesChange(parsedValue);
+            }
+          }}
+          placeholder="e.g., 100"
+        />
+        <HelpText>Only show posts with at least this many upvotes. Leave empty to show all posts.</HelpText>
       </FormGroup>
     </>
   );

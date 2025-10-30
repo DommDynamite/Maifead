@@ -33,6 +33,7 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
           subreddit: s.subreddit,
           redditUsername: s.redditUsername,
           redditSourceType: s.redditSourceType,
+          redditMinUpvotes: s.redditMinUpvotes,
           youtubeShortsFilter: s.youtubeShortsFilter,
           blueskyHandle: s.blueskyHandle,
           blueskyDid: s.blueskyDid,
@@ -55,6 +56,7 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
 
   createSource: async (input: FeedSourceInput) => {
     try {
+      console.log('[feedSourceStore] createSource called with input:', JSON.stringify(input, null, 2));
       const source = await api.createSource({
         name: input.name,
         url: input.url,
@@ -63,6 +65,7 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
         subreddit: input.subreddit,
         redditUsername: input.redditUsername,
         redditSourceType: input.redditSourceType,
+        redditMinUpvotes: input.redditMinUpvotes,
         youtubeShortsFilter: input.youtubeShortsFilter,
         blueskyHandle: input.blueskyHandle,
         blueskyDid: input.blueskyDid,
@@ -70,6 +73,7 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
         retentionDays: input.retentionDays,
         suppressFromMainFeed: input.suppressFromMainFeed,
       });
+      console.log('[feedSourceStore] API response from createSource:', JSON.stringify(source, null, 2));
 
       const newSource: FeedSource = {
         id: source.id,
@@ -81,6 +85,7 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
         subreddit: source.subreddit,
         redditUsername: source.redditUsername,
         redditSourceType: source.redditSourceType,
+        redditMinUpvotes: source.redditMinUpvotes,
         youtubeShortsFilter: source.youtubeShortsFilter,
         blueskyHandle: source.blueskyHandle,
         blueskyDid: source.blueskyDid,
@@ -107,14 +112,17 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
 
   updateSource: async (id: string, updates: FeedSourceUpdate) => {
     try {
+      console.log('[feedSourceStore] updateSource called with id:', id, 'updates:', JSON.stringify(updates, null, 2));
       const updated = await api.updateSource(id, {
         name: updates.name,
+        redditMinUpvotes: updates.redditMinUpvotes,
         youtubeShortsFilter: updates.youtubeShortsFilter,
         whitelistKeywords: updates.whitelistKeywords,
         blacklistKeywords: updates.blacklistKeywords,
         retentionDays: updates.retentionDays,
         suppressFromMainFeed: updates.suppressFromMainFeed,
       });
+      console.log('[feedSourceStore] API response from updateSource:', JSON.stringify(updated, null, 2));
 
       set(state => ({
         sources: state.sources.map(source =>
@@ -122,6 +130,7 @@ export const useFeedSourceStore = create<FeedSourceStore>()((set, get) => ({
             ? {
                 ...source,
                 name: updated.name,
+                redditMinUpvotes: updated.redditMinUpvotes,
                 youtubeShortsFilter: updated.youtubeShortsFilter,
                 whitelistKeywords: updated.whitelistKeywords || [],
                 blacklistKeywords: updated.blacklistKeywords || [],

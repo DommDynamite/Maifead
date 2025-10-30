@@ -26,6 +26,7 @@ export class SourcesController {
         subreddit: s.subreddit,
         redditUsername: s.reddit_username,
         redditSourceType: s.reddit_source_type,
+        redditMinUpvotes: s.reddit_min_upvotes,
         youtubeShortsFilter: s.youtube_shorts_filter || 'all',
         blueskyHandle: s.bluesky_handle,
         iconUrl: s.icon_url,
@@ -52,7 +53,7 @@ export class SourcesController {
   static async create(req: Request<{}, {}, CreateSourceRequest>, res: Response) {
     try {
       const userId = (req as any).userId;
-      const { name, url, type, channelId, subreddit, redditUsername, redditSourceType, youtubeShortsFilter, category, retentionDays, suppressFromMainFeed, whitelistKeywords, blacklistKeywords } = req.body;
+      const { name, url, type, channelId, subreddit, redditUsername, redditSourceType, redditMinUpvotes, youtubeShortsFilter, category, retentionDays, suppressFromMainFeed, whitelistKeywords, blacklistKeywords } = req.body;
 
       if (!name || !url) {
         return res.status(400).json({ error: 'Name and URL are required' });
@@ -164,8 +165,8 @@ export class SourcesController {
         : null;
 
       db.prepare(`
-        INSERT INTO sources (id, user_id, name, url, type, channel_id, subreddit, reddit_username, reddit_source_type, youtube_shorts_filter, bluesky_handle, category, icon_url, retention_days, suppress_from_main_feed, whitelist_keywords, blacklist_keywords, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO sources (id, user_id, name, url, type, channel_id, subreddit, reddit_username, reddit_source_type, reddit_min_upvotes, youtube_shorts_filter, bluesky_handle, category, icon_url, retention_days, suppress_from_main_feed, whitelist_keywords, blacklist_keywords, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         sourceId,
         userId,
@@ -176,6 +177,7 @@ export class SourcesController {
         extractedSubreddit || null,
         extractedRedditUsername || null,
         extractedRedditSourceType || null,
+        redditMinUpvotes || null,
         youtubeShortsFilter || 'all',
         extractedBlueskyHandle || null,
         category || null,
@@ -201,6 +203,7 @@ export class SourcesController {
         subreddit: source.subreddit,
         redditUsername: source.reddit_username,
         redditSourceType: source.reddit_source_type,
+        redditMinUpvotes: source.reddit_min_upvotes,
         youtubeShortsFilter: source.youtube_shorts_filter || 'all',
         blueskyHandle: source.bluesky_handle,
         blueskyDid: source.bluesky_did,
@@ -224,6 +227,7 @@ export class SourcesController {
         subreddit: source.subreddit,
         redditUsername: source.reddit_username,
         redditSourceType: source.reddit_source_type,
+        redditMinUpvotes: source.reddit_min_upvotes,
         youtubeShortsFilter: source.youtube_shorts_filter || 'all',
         blueskyHandle: source.bluesky_handle,
         iconUrl: source.icon_url,
@@ -251,7 +255,7 @@ export class SourcesController {
     try {
       const userId = (req as any).userId;
       const { id } = req.params;
-      const { name, category, fetchInterval, youtubeShortsFilter, retentionDays, suppressFromMainFeed, whitelistKeywords, blacklistKeywords } = req.body;
+      const { name, category, fetchInterval, redditMinUpvotes, youtubeShortsFilter, retentionDays, suppressFromMainFeed, whitelistKeywords, blacklistKeywords } = req.body;
 
       // Verify ownership
       const source = db.prepare('SELECT * FROM sources WHERE id = ? AND user_id = ?')
@@ -276,6 +280,10 @@ export class SourcesController {
       if (fetchInterval) {
         updates.push('fetch_interval = ?');
         values.push(fetchInterval);
+      }
+      if (redditMinUpvotes !== undefined) {
+        updates.push('reddit_min_upvotes = ?');
+        values.push(redditMinUpvotes);
       }
       if (youtubeShortsFilter !== undefined) {
         updates.push('youtube_shorts_filter = ?');
@@ -321,6 +329,7 @@ export class SourcesController {
         subreddit: updated.subreddit,
         redditUsername: updated.reddit_username,
         redditSourceType: updated.reddit_source_type,
+        redditMinUpvotes: updated.reddit_min_upvotes,
         youtubeShortsFilter: updated.youtube_shorts_filter || 'all',
         blueskyHandle: updated.bluesky_handle,
         iconUrl: updated.icon_url,
@@ -396,6 +405,7 @@ export class SourcesController {
         subreddit: sourceRow.subreddit,
         redditUsername: sourceRow.reddit_username,
         redditSourceType: sourceRow.reddit_source_type,
+        redditMinUpvotes: sourceRow.reddit_min_upvotes,
         youtubeShortsFilter: sourceRow.youtube_shorts_filter || 'all',
         blueskyHandle: sourceRow.bluesky_handle,
         blueskyDid: sourceRow.bluesky_did,
@@ -453,6 +463,7 @@ export class SourcesController {
             subreddit: sourceRow.subreddit,
             redditUsername: sourceRow.reddit_username,
             redditSourceType: sourceRow.reddit_source_type,
+            redditMinUpvotes: sourceRow.reddit_min_upvotes,
             youtubeShortsFilter: sourceRow.youtube_shorts_filter || 'all',
             blueskyHandle: sourceRow.bluesky_handle,
             blueskyDid: sourceRow.bluesky_did,

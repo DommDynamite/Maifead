@@ -3,8 +3,9 @@ import styled from 'styled-components';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FilterConfig } from './FilterConfig';
+import { RedditSourceForm } from './RedditSourceForm';
 import { useFeedSourceStore } from '../../stores/feedSourceStore';
-import type { FeedSource } from '@maifead/types';
+import type { FeedSource, RedditSourceType } from '@maifead/types';
 
 interface EditFeedModalProps {
   isOpen: boolean;
@@ -210,6 +211,8 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
   const { updateSource } = useFeedSourceStore();
   const [name, setName] = useState('');
   const [youtubeShortsFilter, setYoutubeShortsFilter] = useState<'all' | 'exclude' | 'only'>('all');
+  const [redditSourceType, setRedditSourceType] = useState<RedditSourceType>('subreddit');
+  const [redditMinUpvotes, setRedditMinUpvotes] = useState<number | undefined>(undefined);
   const [whitelistKeywords, setWhitelistKeywords] = useState<string[]>([]);
   const [blacklistKeywords, setBlacklistKeywords] = useState<string[]>([]);
   const [retentionDays, setRetentionDays] = useState<number>(30);
@@ -220,6 +223,8 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
     if (source) {
       setName(source.name);
       setYoutubeShortsFilter(source.youtubeShortsFilter || 'all');
+      setRedditSourceType(source.redditSourceType || 'subreddit');
+      setRedditMinUpvotes(source.redditMinUpvotes);
       setWhitelistKeywords(source.whitelistKeywords || []);
       setBlacklistKeywords(source.blacklistKeywords || []);
       setRetentionDays(source.retentionDays ?? 30);
@@ -243,6 +248,14 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
       updates.youtubeShortsFilter = youtubeShortsFilter;
     }
 
+    // Only include redditMinUpvotes for Reddit sources
+    if (source.type === 'reddit') {
+      console.log('[EditFeedModal] Reddit source - redditMinUpvotes state:', redditMinUpvotes);
+      updates.redditMinUpvotes = redditMinUpvotes;
+      console.log('[EditFeedModal] Reddit source - updates.redditMinUpvotes:', updates.redditMinUpvotes);
+    }
+
+    console.log('[EditFeedModal] Final updates object being sent to updateSource:', JSON.stringify(updates, null, 2));
     updateSource(source.id, updates);
 
     handleClose();
@@ -333,6 +346,24 @@ export const EditFeedModal: React.FC<EditFeedModalProps> = ({ isOpen, source, on
                     <option value="only">Shorts Only</option>
                   </Select>
                   <HelpText>Choose whether to include, exclude, or only show YouTube Shorts</HelpText>
+                </FormGroup>
+              )}
+
+              {source.type === 'reddit' && (
+                <FormGroup>
+                  <Label htmlFor="reddit-min-upvotes">Minimum Upvotes (Optional)</Label>
+                  <Input
+                    id="reddit-min-upvotes"
+                    type="number"
+                    min="0"
+                    value={redditMinUpvotes ?? ''}
+                    onChange={e => {
+                      const value = e.target.value;
+                      setRedditMinUpvotes(value === '' ? undefined : parseInt(value, 10));
+                    }}
+                    placeholder="e.g., 100"
+                  />
+                  <HelpText>Only show posts with at least this many upvotes. Leave empty to show all posts.</HelpText>
                 </FormGroup>
               )}
 

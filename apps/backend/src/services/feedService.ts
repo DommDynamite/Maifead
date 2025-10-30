@@ -884,6 +884,46 @@ export class FeedService {
   }
 
   /**
+   * Fetch Reddit post upvote count from JSON API
+   * Returns the upvote count (score) for a given Reddit post
+   */
+  private static async fetchRedditPostUpvotes(postLink: string): Promise<number | null> {
+    try {
+      // Convert post URL to JSON API URL
+      // https://www.reddit.com/r/subreddit/comments/xxxxx/title/ -> https://www.reddit.com/r/subreddit/comments/xxxxx/title/.json
+      const jsonUrl = postLink.endsWith('/') ? `${postLink.slice(0, -1)}.json` : `${postLink}.json`;
+
+      const response = await fetch(jsonUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`Failed to fetch Reddit post JSON: ${response.status}`);
+        return null;
+      }
+
+      const jsonData = await response.json() as any;
+
+      // Navigate the JSON API response structure
+      // Structure: [0].data.children[0].data.score
+      const postData = jsonData?.[0]?.data?.children?.[0]?.data;
+
+      if (!postData || typeof postData.score !== 'number') {
+        console.log(`No score found in JSON API response for: ${postLink}`);
+        return null;
+      }
+
+      return postData.score;
+    } catch (error) {
+      console.error('Error fetching Reddit post upvotes from JSON API:', error);
+      return null;
+    }
+  }
+
+  /**
    * Fetch Reddit gallery images using the JSON API
    * Returns array of full-resolution image URLs
    * Uses Reddit's public JSON API by appending .json to the URL
@@ -1125,6 +1165,23 @@ export class FeedService {
           // Skip if filter doesn't match
           if (shortsFilter === 'exclude' && isShort) continue;
           if (shortsFilter === 'only' && !isShort) continue;
+        }
+
+        // Apply Reddit upvote filter if this is a Reddit source
+        if (source.type === 'reddit' && item.link && (source as any).redditMinUpvotes) {
+          const minUpvotes = (source as any).redditMinUpvotes;
+          console.log(`[fetchAndStoreItems] Checking upvotes for post: ${item.link}, min required: ${minUpvotes}`);
+
+          const upvotes = await this.fetchRedditPostUpvotes(item.link);
+          if (upvotes !== null) {
+            console.log(`[fetchAndStoreItems] Post has ${upvotes} upvotes`);
+            if (upvotes < minUpvotes) {
+              console.log(`[fetchAndStoreItems] Skipping post with ${upvotes} upvotes (min: ${minUpvotes})`);
+              continue;
+            }
+          } else {
+            console.warn(`[fetchAndStoreItems] Could not fetch upvotes for post: ${item.link}, including anyway`);
+          }
         }
 
         // Extract image URL from various possible locations
@@ -1496,6 +1553,7 @@ export class FeedService {
       subreddit: row.subreddit,
       redditUsername: row.reddit_username,
       redditSourceType: row.reddit_source_type,
+      redditMinUpvotes: row.reddit_min_upvotes,
       youtubeShortsFilter: row.youtube_shorts_filter || 'all',
       blueskyHandle: row.bluesky_handle,
       blueskyDid: row.bluesky_did,

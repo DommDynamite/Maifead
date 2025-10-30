@@ -143,6 +143,13 @@ export const initializeDatabase = () => {
     // Column already exists, ignore error
   }
 
+  // Add Reddit minimum upvotes filter
+  try {
+    db.exec(`ALTER TABLE sources ADD COLUMN reddit_min_upvotes INTEGER`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
+
   // Add retention days for automatic cleanup
   try {
     db.exec(`ALTER TABLE sources ADD COLUMN retention_days INTEGER DEFAULT 30`);

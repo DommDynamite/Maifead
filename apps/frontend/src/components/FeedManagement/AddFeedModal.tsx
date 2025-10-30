@@ -215,6 +215,7 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
   const [redditSourceType, setRedditSourceType] = useState<RedditSourceType>('subreddit');
+  const [redditMinUpvotes, setRedditMinUpvotes] = useState<number | undefined>(undefined);
   const [youtubeShortsFilter, setYoutubeShortsFilter] = useState<'all' | 'exclude' | 'only'>('all');
   const [whitelistKeywords, setWhitelistKeywords] = useState<string[]>([]);
   const [blacklistKeywords, setBlacklistKeywords] = useState<string[]>([]);
@@ -281,6 +282,9 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
         input.redditUsername = identifier;
         input.redditSourceType = 'user';
       }
+      console.log('[AddFeedModal] Reddit source - redditMinUpvotes state:', redditMinUpvotes);
+      input.redditMinUpvotes = redditMinUpvotes;
+      console.log('[AddFeedModal] Reddit source - input.redditMinUpvotes:', input.redditMinUpvotes);
     } else if (sourceType === 'bluesky') {
       const handle = url.trim();
       // Remove @ prefix if present
@@ -290,6 +294,7 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
       input.blueskyHandle = cleanHandle;
     }
 
+    console.log('[AddFeedModal] Final input object being sent to createSource:', JSON.stringify(input, null, 2));
     createSource(input);
     handleClose();
   };
@@ -299,6 +304,7 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
     setUrl('');
     setName('');
     setRedditSourceType('subreddit');
+    setRedditMinUpvotes(undefined);
     setYoutubeShortsFilter('all');
     setWhitelistKeywords([]);
     setBlacklistKeywords([]);
@@ -369,9 +375,11 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
                   url={url}
                   name={name}
                   sourceType={redditSourceType}
+                  minUpvotes={redditMinUpvotes}
                   onUrlChange={setUrl}
                   onNameChange={setName}
                   onSourceTypeChange={setRedditSourceType}
+                  onMinUpvotesChange={setRedditMinUpvotes}
                 />
               )}
 
