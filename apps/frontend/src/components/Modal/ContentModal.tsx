@@ -734,7 +734,11 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
   const { success } = useToastStore();
 
   // Check if item is saved in any collection
-  const isSaved = item ? getCollectionsForItem(item.id).length > 0 : false;
+  const isSaved = useMemo(() => {
+    if (!item) return false;
+    return getCollectionsForItem(item.id).length > 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item?.id, collections]);
 
   // Extract all images from content for gallery navigation
   const galleryImages = useMemo(() => {
