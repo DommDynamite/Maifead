@@ -730,7 +730,7 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
 
-  const { collections, addCollection, addItemToCollection, fetchCollections, getCollectionsForItem } = useCollectionStore();
+  const { collections, addCollection, addItemToCollection, fetchCollections, getCollectionsForItem} = useCollectionStore();
   const { success } = useToastStore();
 
   // Check if item is saved in any collection
@@ -883,26 +883,6 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
     setLightboxImage(galleryImages[prevIndex]);
   };
 
-  if (!item) return null;
-
-  const timeAgo = formatDistanceToNow(item.publishedAt, { addSuffix: true });
-  const primaryMedia = item.media?.[0];
-  // Use item.isRead directly from the item prop, which is updated in real-time
-  const isRead = item.isRead || false;
-
-  // Check if content contains YouTube embed
-  const hasYouTubeEmbed = item.content.html?.includes('youtube-embed') || item.content.html?.includes('youtube.com/embed');
-
-  // Check if content contains Reddit video (v.redd.it or embedded video)
-  const hasRedditVideo = item.content.html?.includes('v.redd.it') ||
-                         (item.content.html?.includes('<video') && item.source.type === 'reddit');
-
-  // Check if content contains Redgifs embed
-  const hasRedgifsEmbed = item.content.html?.includes('redgifs-embed') || item.content.html?.includes('redgifs.com/ifr');
-
-  // Determine if we should hide the thumbnail (has video embed)
-  const hasVideoEmbed = hasYouTubeEmbed || hasRedditVideo || hasRedgifsEmbed;
-
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -910,11 +890,13 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
   };
 
   const handleToggleRead = () => {
+    if (!item) return;
     onToggleRead(item.id);
     onClose();
   };
 
   const handleOpenOriginal = () => {
+    if (!item) return;
     window.open(item.url, '_blank', 'noopener,noreferrer');
   };
 
@@ -960,6 +942,12 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  // Don't render if no item
+  if (!item) return null;
+
+  const timeAgo = formatDistanceToNow(item.publishedAt, { addSuffix: true });
+  const isRead = item.isRead || false;
 
   return (
     <AnimatePresence>
