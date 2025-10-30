@@ -279,3 +279,72 @@ export const deleteFead = (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Failed to delete fead' });
   }
 };
+
+/**
+ * Mark all items in a Fead as read
+ */
+export const markFeadAsRead = (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Check if fead exists and belongs to user
+    const fead = db
+      .prepare(`SELECT id FROM feads WHERE id = ? AND user_id = ?`)
+      .get(id, userId);
+
+    if (!fead) {
+      return res.status(404).json({ error: 'Fead not found' });
+    }
+
+    // Get all source IDs for this fead
+    const sourceIds = db
+      .prepare(`SELECT source_id FROM fead_sources WHERE fead_id = ?`)
+      .all(id)
+      .map((row: any) => row.source_id);
+
+    if (sourceIds.length === 0) {
+      return res.json({ message: 'No sources in this fead', itemsMarked: 0 });
+    }
+
+    // Get all feed item IDs from these sources
+    const placeholders = sourceIds.map(() => '?').join(',');
+    const feedItemIds = db
+      .prepare(
+        `SELECT id FROM feed_items WHERE source_id IN (${placeholders})`
+      )
+      .all(...sourceIds)
+      .map((row: any) => row.id);
+
+    if (feedItemIds.length === 0) {
+      return res.json({ message: 'No items to mark as read', itemsMarked: 0 });
+    }
+
+    const now = Date.now();
+    let itemsMarked = 0;
+
+    // Mark items as read in user_feed_items table
+    const upsertStmt = db.prepare(`
+      INSERT INTO user_feed_items (user_id, feed_item_id, read, saved, updated_at)
+      VALUES (?, ?, 1, 0, ?)
+      ON CONFLICT(user_id, feed_item_id) DO UPDATE SET read = 1, updated_at = ?
+    `);
+
+    for (const itemId of feedItemIds) {
+      upsertStmt.run(userId, itemId, now, now);
+      itemsMarked++;
+    }
+
+    res.json({
+      message: `Marked ${itemsMarked} items as read`,
+      itemsMarked
+    });
+  } catch (error) {
+    console.error('Error marking fead as read:', error);
+    res.status(500).json({ error: 'Failed to mark fead as read' });
+  }
+};

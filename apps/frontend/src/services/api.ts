@@ -257,6 +257,12 @@ class ApiClient {
     });
   }
 
+  async markFeadAsRead(id: string) {
+    return this.request<{ message: string; itemsMarked: number }>(`/feads/${id}/mark-all-read`, {
+      method: 'POST',
+    });
+  }
+
   // Admin endpoints
   async getUsers() {
     return this.request<{ users: any[] }>('/admin/users');

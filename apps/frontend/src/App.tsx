@@ -27,7 +27,7 @@ function AppContent() {
   const { initialize, isAuthenticated } = useAuthStore();
   const { fetchSources } = useFeedSourceStore();
   const { fetchCollections } = useCollectionStore();
-  const { fetchFeads, createFead, updateFead } = useFeadStore();
+  const { fetchFeads, createFead, updateFead, deleteFead } = useFeadStore();
   const { fetchItems } = useFeedStore();
 
   const [isFeadModalOpen, setIsFeadModalOpen] = useState(false);
@@ -89,6 +89,10 @@ function AppContent() {
     }
   };
 
+  const handleDeleteFead = async (feadId: string) => {
+    await deleteFead(feadId);
+  };
+
   const handleCloseFeadModal = () => {
     setIsFeadModalOpen(false);
     setEditingFead(null);
@@ -103,6 +107,7 @@ function AppContent() {
         isOpen={isFeadModalOpen}
         onClose={handleCloseFeadModal}
         onSave={handleSaveFead}
+        onDelete={handleDeleteFead}
         editFead={editingFead}
       />
       <CollectionsPanel />

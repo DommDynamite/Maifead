@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { X, Plus, Edit2, Trash2, ChevronRight } from 'lucide-react';
+import { X, Plus, Edit2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../../stores/uiStore';
 import { useFeadStore } from '../../stores/feadStore';
@@ -24,7 +24,7 @@ const Panel = styled(motion.aside)`
   left: 0;
   top: 0;
   height: 100vh;
-  width: 280px;
+  width: 340px;
   background: ${props => props.theme.colors.surface};
   border-right: 1px solid ${props => props.theme.colors.border};
   box-shadow: ${props => props.theme.shadows.xl};
@@ -34,7 +34,7 @@ const Panel = styled(motion.aside)`
 
   @media (max-width: ${props => props.theme.breakpoints.md}) {
     width: 100%;
-    max-width: 320px;
+    max-width: 360px;
   }
 `;
 
@@ -255,7 +255,7 @@ interface FeadsPanelProps {
 
 export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead }) => {
   const { isFeadsPanelOpen, toggleFeadsPanel, activeFeadId, setActiveFead } = useUIStore();
-  const { feads, deleteFead, getUnreadCountForFead } = useFeadStore();
+  const { feads, getUnreadCountForFead } = useFeadStore();
   const { getSource } = useFeedSourceStore();
   const { items: feedItems } = useFeedStore();
   const [expandedFeadId, setExpandedFeadId] = useState<string | null>(null);
@@ -282,16 +282,6 @@ export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead
   const handleEditClick = (e: React.MouseEvent, fead: Fead) => {
     e.stopPropagation();
     onEditFead?.(fead);
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent, feadId: string) => {
-    e.stopPropagation();
-    if (confirm('Are you sure you want to delete this Fead?')) {
-      deleteFead(feadId);
-      if (activeFeadId === feadId) {
-        setActiveFead(null);
-      }
-    }
   };
 
   return (
@@ -366,13 +356,6 @@ export const FeadsPanel: React.FC<FeadsPanelProps> = ({ onCreateFead, onEditFead
                             title="Edit"
                           >
                             <Edit2 />
-                          </ActionButton>
-                          <ActionButton
-                            onClick={e => handleDeleteClick(e, fead.id)}
-                            aria-label="Delete Fead"
-                            title="Delete"
-                          >
-                            <Trash2 />
                           </ActionButton>
                         </ActionButtons>
                       </FeadItem>

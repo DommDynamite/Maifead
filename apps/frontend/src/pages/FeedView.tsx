@@ -300,6 +300,17 @@ export const FeedView: React.FC = () => {
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    if (filteredItems.length === 0) return;
+
+    // Mark all visible items as read
+    const promises = filteredItems
+      .filter(item => !item.isRead) // Only mark unread items
+      .map(item => markItemRead(item.id, true));
+
+    await Promise.all(promises);
+  };
+
   // Calculate the container width based on layout
   const getContainerWidth = () => {
     if (feedLayout === 'single') return maxCardWidth;
@@ -469,7 +480,11 @@ export const FeedView: React.FC = () => {
   return (
     <FeedContainer>
       <FeedContent $maxWidth={getContainerWidth()}>
-        <SearchBar ref={searchInputRef} resultCount={isLoading ? 0 : filteredItems.length} />
+        <SearchBar
+          ref={searchInputRef}
+          resultCount={isLoading ? 0 : filteredItems.length}
+          onMarkAllAsRead={handleMarkAllAsRead}
+        />
 
         {isLoading ? (
           <CardList $layout={feedLayout}>

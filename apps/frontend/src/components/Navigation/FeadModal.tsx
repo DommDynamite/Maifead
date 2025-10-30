@@ -299,7 +299,7 @@ const Footer = styled.footer`
   flex-shrink: 0;
 `;
 
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
   flex: 1;
   padding: ${props => props.theme.spacing[3]} ${props => props.theme.spacing[4]};
   border-radius: ${props => props.theme.borderRadius.base};
@@ -316,6 +316,14 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
     color: white;
     &:hover {
       background: ${props.theme.colors.primaryDark};
+    }
+  `
+      : props.$variant === 'danger'
+      ? `
+    background: #ef4444;
+    color: white;
+    &:hover {
+      background: #dc2626;
     }
   `
       : `
@@ -364,10 +372,11 @@ interface FeadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (fead: { name: string; icon: string; isImportant?: boolean; sourceIds: string[] }) => void;
+  onDelete?: (feadId: string) => void;
   editFead?: Fead | null;
 }
 
-export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, editFead }) => {
+export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, onDelete, editFead }) => {
   const { sources: feedSources, getSource } = useFeedSourceStore();
   const { items: feedItems } = useFeedStore();
 
@@ -496,6 +505,15 @@ export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, e
         sourceIds: Array.from(selectedSourceIds),
       });
       onClose();
+    }
+  };
+
+  const handleDelete = () => {
+    if (editFead && onDelete) {
+      if (confirm(`Are you sure you want to delete "${editFead.name}"?`)) {
+        onDelete(editFead.id);
+        onClose();
+      }
     }
   };
 
@@ -642,6 +660,11 @@ export const FeadModal: React.FC<FeadModalProps> = ({ isOpen, onClose, onSave, e
             </Content>
 
             <Footer>
+              {editFead && onDelete && (
+                <Button type="button" $variant="danger" onClick={handleDelete}>
+                  Delete
+                </Button>
+              )}
               <Button type="button" $variant="secondary" onClick={onClose}>
                 Cancel
               </Button>

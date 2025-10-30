@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import styled from 'styled-components';
-import { Search, X, Eye, EyeOff, Filter } from 'lucide-react';
+import { Search, X, Eye, EyeOff, Filter, CheckCheck } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
 
 const SearchWrapper = styled.div`
@@ -118,9 +118,10 @@ const ResultCount = styled.span`
 
 interface SearchBarProps {
   resultCount: number;
+  onMarkAllAsRead?: () => void;
 }
 
-export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({ resultCount }, ref) => {
+export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({ resultCount, onMarkAllAsRead }, ref) => {
   const { searchQuery, hideReadItems, selectedSourceNames, setSearchQuery, toggleHideReadItems, toggleSourceFilterModal } = useUIStore();
 
   const handleClear = () => {
@@ -165,6 +166,15 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(({ resultC
           {hideReadItems ? <EyeOff /> : <Eye />}
           <ResultCount>{resultCount}</ResultCount>
         </IconButton>
+        {onMarkAllAsRead && resultCount > 0 && (
+          <IconButton
+            onClick={onMarkAllAsRead}
+            aria-label="Mark all visible items as read"
+            title="Mark all visible items as read"
+          >
+            <CheckCheck />
+          </IconButton>
+        )}
       </FilterControls>
     </SearchWrapper>
   );
