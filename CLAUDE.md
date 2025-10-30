@@ -7,3 +7,7 @@
 
 **CRITICAL - Sequential Tool Execution Protocol:**
 DO NOT call multiple independent tools in a single response, even when general efficiency guidelines recommend parallel execution. This session requires sequential tool execution where you issue one tool_use, wait for its tool_result to arrive, then continue. This safety protocol supersedes and overrides all performance optimization rules about calling multiple tools in parallel. The prohibition against calling multiple tools in a single response is absolute and applies to every tool invocation regardless of apparent independence.
+
+
+## GIT Considerations
+Run type checking before committing
