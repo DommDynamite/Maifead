@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import type { ContentItem } from '@maifead/types';
 import { useUIStore } from '../../stores/uiStore';
+import { useCollectionStore } from '../../stores/collectionStore';
+import { useToastStore } from '../../stores/toastStore';
+import { AddToCollectionModal } from '../Collections/AddToCollectionModal';
 
 interface ContentModalProps {
   item: ContentItem | null;
@@ -725,6 +728,13 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
   const contentRef = useRef<HTMLDivElement>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
+
+  const { collections, addCollection, addItemToCollection, fetchCollections, getCollectionsForItem } = useCollectionStore();
+  const { success } = useToastStore();
+
+  // Check if item is saved in any collection
+  const isSaved = item ? getCollectionsForItem(item.id).length > 0 : false;
 
   // Extract all images from content for gallery navigation
   const galleryImages = useMemo(() => {
@@ -904,6 +914,48 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
     window.open(item.url, '_blank', 'noopener,noreferrer');
   };
 
+  // Find or create the "Saved" collection
+  const getSavedCollection = async () => {
+    let savedCollection = collections.find(c => c.name === 'Saved');
+
+    if (!savedCollection) {
+      // Create the "Saved" collection if it doesn't exist
+      savedCollection = await addCollection({
+        name: 'Saved',
+        color: '#fbbf24', // Yellow/amber color for saved items
+        icon: 'Bookmark',
+      });
+    }
+
+    return savedCollection;
+  };
+
+  // Handle save button click - add to "Saved" collection
+  const handleSave = async () => {
+    if (!item) return;
+
+    try {
+      const savedCollection = await getSavedCollection();
+      await addItemToCollection(savedCollection.id, item.id);
+      success('Added to Saved collection');
+    } catch (error) {
+      console.error('Failed to save item:', error);
+    }
+  };
+
+  // Handle right-click on save button - open collection modal
+  const handleSaveRightClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsCollectionModalOpen(true);
+  };
+
+  // Fetch collections when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchCollections();
+    }
+  }, [isOpen, fetchCollections]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -945,11 +997,17 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
                   <CheckCircle />
                   <ButtonText>{isRead ? 'Mark Unread' : 'Mark Read'}</ButtonText>
                 </ActionButton>
-                <ActionButton aria-label="Save">
+                <ActionButton
+                  $primary={isSaved}
+                  onClick={handleSave}
+                  onContextMenu={handleSaveRightClick}
+                  aria-label="Save"
+                  title="Left-click to save, right-click to choose collection"
+                >
                   <BookmarkPlus />
-                  <ButtonText>Save</ButtonText>
+                  <ButtonText>{isSaved ? 'Saved' : 'Save'}</ButtonText>
                 </ActionButton>
-                <ActionButton $primary onClick={handleOpenOriginal} aria-label="Open Original">
+                <ActionButton onClick={handleOpenOriginal} aria-label="Open Original">
                   <ExternalLink />
                   <ButtonText>Open Original</ButtonText>
                 </ActionButton>
@@ -1012,6 +1070,15 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
             onClick={(e) => e.stopPropagation()}
           />
         </LightboxBackdrop>
+      )}
+
+      {/* Add to Collection Modal */}
+      {item && (
+        <AddToCollectionModal
+          isOpen={isCollectionModalOpen}
+          onClose={() => setIsCollectionModalOpen(false)}
+          item={item}
+        />
       )}
     </AnimatePresence>
   );
