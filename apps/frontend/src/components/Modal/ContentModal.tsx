@@ -954,7 +954,8 @@ export const ContentModal: React.FC<ContentModalProps> = ({ item, isOpen, onClos
     if (isOpen) {
       fetchCollections();
     }
-  }, [isOpen, fetchCollections]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
