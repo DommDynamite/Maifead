@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { X, Plus, Edit2, Trash2, ChevronRight, Folder, Globe } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, ChevronRight, Folder } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../../stores/uiStore';
 import { useCollectionStore } from '../../stores/collectionStore';
-import { PublicCollectionBrowser } from '../Collections/PublicCollectionBrowser';
 import type { Collection } from '@maifead/types';
 
 const Backdrop = styled(motion.div)`
@@ -174,9 +173,6 @@ const Footer = styled.footer`
   padding: ${props => props.theme.spacing[4]};
   border-top: 1px solid ${props => props.theme.colors.border};
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing[2]};
 `;
 
 const AddButton = styled.button`
@@ -209,38 +205,6 @@ const AddButton = styled.button`
   }
 `;
 
-const BrowseButton = styled.button`
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: ${props => props.theme.spacing[2]};
-  padding: ${props => props.theme.spacing[3]} ${props => props.theme.spacing[4]};
-  background: transparent;
-  color: ${props => props.theme.colors.text};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: ${props => props.theme.borderRadius.base};
-  font-size: ${props => props.theme.fontSizes.sm};
-  font-weight: ${props => props.theme.fontWeights.medium};
-  cursor: pointer;
-  transition: all ${props => props.theme.transitions.fast};
-
-  &:hover {
-    background: ${props => props.theme.colors.surfaceHover};
-    border-color: ${props => props.theme.colors.primary};
-    color: ${props => props.theme.colors.primary};
-  }
-
-  &:active {
-    transform: scale(0.98);
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-`;
-
 const EmptyState = styled.div`
   padding: ${props => props.theme.spacing[8]} ${props => props.theme.spacing[4]};
   text-align: center;
@@ -260,7 +224,6 @@ export const CollectionsPanel: React.FC<CollectionsPanelProps> = ({
   const { isCollectionsPanelOpen, toggleCollectionsPanel, activeCollectionId, setActiveCollection } =
     useUIStore();
   const { collections, deleteCollection, getCollectionItemCount } = useCollectionStore();
-  const [isBrowserOpen, setIsBrowserOpen] = useState(false);
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -371,14 +334,8 @@ export const CollectionsPanel: React.FC<CollectionsPanelProps> = ({
                 <Plus />
                 Create Collection
               </AddButton>
-              <BrowseButton onClick={() => setIsBrowserOpen(true)}>
-                <Globe />
-                Browse Public Collections
-              </BrowseButton>
             </Footer>
           </Panel>
-
-          <PublicCollectionBrowser isOpen={isBrowserOpen} onClose={() => setIsBrowserOpen(false)} />
         </>
       )}
     </AnimatePresence>

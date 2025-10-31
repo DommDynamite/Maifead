@@ -411,11 +411,11 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({ isOpen
                     <ToggleInfo>
                       <ToggleLabel>
                         {isPublic ? <Globe /> : <Lock />}
-                        {isPublic ? 'Public Collection' : 'Private Collection'}
+                        {isPublic ? 'Public Fead' : 'Private Collection'}
                       </ToggleLabel>
                       <ToggleDescription>
                         {isPublic
-                          ? 'Other users can discover and subscribe to this collection as a public fead'
+                          ? 'Other users can add this collection as a public fead source'
                           : 'Only you can see this collection'}
                       </ToggleDescription>
                     </ToggleInfo>
@@ -432,9 +432,9 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({ isOpen
                       >
                         <Globe />
                         <WarningContent>
-                          <WarningTitle>Making Collection Public</WarningTitle>
+                          <WarningTitle>Making Fead Public</WarningTitle>
                           <WarningText>
-                            Once public, other users will be able to discover and subscribe to this collection.
+                            Once public, other users will be able to add this collection as a fead source.
                             They'll see all items you add to it.
                           </WarningText>
                         </WarningContent>
@@ -450,13 +450,13 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({ isOpen
                       >
                         <AlertTriangle />
                         <WarningContent>
-                          <WarningTitle>Making Collection Private</WarningTitle>
+                          <WarningTitle>Making Fead Private</WarningTitle>
                           <WarningText>
                             {isLoadingSubscribers
                               ? 'Checking for subscribers...'
                               : subscriberCount !== null && subscriberCount > 0
-                                ? `${subscriberCount} ${subscriberCount === 1 ? 'user has' : 'users have'} subscribed to this collection. They will be notified and their feads will stop updating.`
-                                : 'This collection will no longer be visible to other users.'}
+                                ? `${subscriberCount} ${subscriberCount === 1 ? 'user has' : 'users have'} added this as a fead source. Their sources will stop updating.`
+                                : 'This collection will no longer be available as a public fead source.'}
                           </WarningText>
                         </WarningContent>
                       </WarningBanner>

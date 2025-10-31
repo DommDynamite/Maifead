@@ -8,6 +8,7 @@ import { RSSFeedForm } from './RSSFeedForm';
 import { YouTubeChannelForm } from './YouTubeChannelForm';
 import { RedditSourceForm } from './RedditSourceForm';
 import { BlueskySourceForm } from './BlueskySourceForm';
+import { PublicFeadSourceForm } from './PublicFeadSourceForm';
 import { useFeedSourceStore } from '../../stores/feedSourceStore';
 import type { FeedSourceInput, SourceType, RedditSourceType } from '@maifead/types';
 
@@ -217,6 +218,7 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
   const [redditSourceType, setRedditSourceType] = useState<RedditSourceType>('subreddit');
   const [redditMinUpvotes, setRedditMinUpvotes] = useState<number | undefined>(undefined);
   const [youtubeShortsFilter, setYoutubeShortsFilter] = useState<'all' | 'exclude' | 'only'>('all');
+  const [selectedCollectionIds, setSelectedCollectionIds] = useState<string[]>([]);
   const [whitelistKeywords, setWhitelistKeywords] = useState<string[]>([]);
   const [blacklistKeywords, setBlacklistKeywords] = useState<string[]>([]);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
@@ -225,7 +227,16 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
 
   const handleSubmit = () => {
     // Validation based on source type
-    if (sourceType === 'reddit') {
+    if (sourceType === 'publicfead') {
+      if (selectedCollectionIds.length === 0) {
+        alert('Please select at least one public collection');
+        return;
+      }
+      if (!name.trim()) {
+        alert('Please enter a name for this source');
+        return;
+      }
+    } else if (sourceType === 'reddit') {
       if (!url.trim()) {
         alert(`Please enter a ${redditSourceType === 'subreddit' ? 'subreddit name' : 'username'}`);
         return;
@@ -292,6 +303,10 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
       input.name = name.trim() || cleanHandle;
       input.url = handle.startsWith('http') ? handle : `https://bsky.app/profile/${cleanHandle}`;
       input.blueskyHandle = cleanHandle;
+    } else if (sourceType === 'publicfead') {
+      input.name = name.trim();
+      input.url = 'publicfead://collections'; // Synthetic URL for public fead sources
+      input.collectionIds = selectedCollectionIds;
     }
 
     console.log('[AddFeedModal] Final input object being sent to createSource:', JSON.stringify(input, null, 2));
@@ -306,6 +321,7 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
     setRedditSourceType('subreddit');
     setRedditMinUpvotes(undefined);
     setYoutubeShortsFilter('all');
+    setSelectedCollectionIds([]);
     setWhitelistKeywords([]);
     setBlacklistKeywords([]);
     setIsFilterExpanded(false);
@@ -321,10 +337,14 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
     setName('');
     setRedditSourceType('subreddit');
     setYoutubeShortsFilter('all');
+    setSelectedCollectionIds([]);
   };
 
   // Check if form is valid for submission
   const isFormValid = () => {
+    if (sourceType === 'publicfead') {
+      return selectedCollectionIds.length > 0 && name.trim().length > 0;
+    }
     return url.trim().length > 0;
   };
 
@@ -389,6 +409,15 @@ export const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) =
                   name={name}
                   onUrlChange={setUrl}
                   onNameChange={setName}
+                />
+              )}
+
+              {sourceType === 'publicfead' && (
+                <PublicFeadSourceForm
+                  name={name}
+                  selectedCollectionIds={selectedCollectionIds}
+                  onNameChange={setName}
+                  onCollectionIdsChange={setSelectedCollectionIds}
                 />
               )}
 

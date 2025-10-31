@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Rss, Youtube, MessageSquare, Cloud } from 'lucide-react';
+import { Rss, Youtube, MessageSquare, Cloud, Globe } from 'lucide-react';
 import type { SourceType } from '@maifead/types';
 
 interface SourceTypeSelectorProps {
@@ -22,7 +22,7 @@ const Label = styled.label`
 
 const TypeGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: ${props => props.theme.spacing[3]};
 `;
 
@@ -94,6 +94,12 @@ export const SourceTypeSelector: React.FC<SourceTypeSelectorProps> = ({ selected
           <Cloud />
           <TypeTitle $selected={selectedType === 'bluesky'}>Bluesky</TypeTitle>
           <TypeDescription>Follow a Bluesky user</TypeDescription>
+        </TypeCard>
+
+        <TypeCard $selected={selectedType === 'publicfead'} onClick={() => onTypeChange('publicfead')} type="button">
+          <Globe />
+          <TypeTitle $selected={selectedType === 'publicfead'}>Public Fead</TypeTitle>
+          <TypeDescription>Subscribe to shared collections</TypeDescription>
         </TypeCard>
       </TypeGrid>
     </Container>
