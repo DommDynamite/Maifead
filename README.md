@@ -6,7 +6,7 @@ A beautiful, privacy-focused RSS feed aggregator designed to help you consume co
 
 ## Features
 
-- **Multi-Source Support**: RSS feeds, YouTube channels, Bluesky profiles
+- **Multi-Source Support**: RSS feeds, YouTube channels, Reddit, Bluesky profiles
 - **Smart Organization**: Collections and custom Feads for grouping sources
 - **Cross-Device Sync**: Read/saved status syncs across all your devices
 - **Privacy-Focused**: Self-hosted, no tracking, your data stays yours
@@ -14,7 +14,34 @@ A beautiful, privacy-focused RSS feed aggregator designed to help you consume co
 - **Mobile-First**: Responsive design that works great on all devices
 - **Keyword Filtering**: Whitelist/blacklist for fine-tuned content control
 - **YouTube Shorts Control**: Filter shorts separately from regular videos
+- **Reddit Upvote Filtering**: Set minimum upvote thresholds for Reddit sources
 - **Flexible Viewing**: Multiple sort options including novel "Shuffle" mode for balanced source mixing
+
+## Supported Sources
+
+### Native Support
+- **RSS Feeds**: Any standard RSS/Atom feed
+- **YouTube Channels**: Channel URLs, @handles, or RSS feed URLs
+- **Reddit**: Subreddits and user profiles with optional upvote filtering
+- **Bluesky**: User profiles via AT Protocol
+
+### Facebook Pages (Third-Party)
+Facebook no longer provides native RSS feeds, but you can still follow public Facebook Pages using third-party RSS converters:
+
+**Recommended Services:**
+1. **[FetchRSS](https://fetchrss.com/facebook)** (Free tier: 5 feeds, updates every 24hrs)
+   - Enter the Facebook Page URL
+   - Generate RSS feed
+   - Copy the generated RSS URL into Maifead as a standard RSS feed
+
+2. **[RSS.app](https://rss.app/)** (Paid)
+   - Generate RSS feeds from any public website including Facebook Pages
+
+3. **Self-Hosted [RSS-Bridge](https://github.com/RSS-Bridge/rss-bridge)**
+   - Deploy your own RSS-Bridge Docker container
+   - Full control, unlimited pages, no rate limits
+
+**Note:** Only public Facebook Pages are supported - personal profiles cannot be accessed due to Facebook's privacy restrictions.
 
 ## Tech Stack
 
