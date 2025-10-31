@@ -27,6 +27,7 @@ export class CollectionsController {
           name: c.name,
           color: c.color,
           icon: c.icon,
+          isPublic: Boolean(c.is_public),
           itemIds: items.map(item => item.feed_item_id),
           createdAt: new Date(c.created_at),
           updatedAt: new Date(c.updated_at),
@@ -71,6 +72,7 @@ export class CollectionsController {
         name: collection.name,
         color: collection.color,
         icon: collection.icon,
+        isPublic: Boolean(collection.is_public),
         createdAt: new Date(collection.created_at),
         updatedAt: new Date(collection.updated_at),
         items: items.map(item => ({
@@ -101,7 +103,7 @@ export class CollectionsController {
   static async create(req: Request<{}, {}, CreateCollectionRequest>, res: Response) {
     try {
       const userId = (req as any).userId;
-      const { name, color, icon } = req.body;
+      const { name, color, icon, isPublic } = req.body;
 
       if (!name || !color) {
         return res.status(400).json({ error: 'Name and color are required' });
@@ -111,9 +113,9 @@ export class CollectionsController {
       const now = Date.now();
 
       db.prepare(`
-        INSERT INTO collections (id, user_id, name, color, icon, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(collectionId, userId, name, color, icon || null, now, now);
+        INSERT INTO collections (id, user_id, name, color, icon, is_public, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(collectionId, userId, name, color, icon || null, isPublic ? 1 : 0, now, now);
 
       const collection = db.prepare('SELECT * FROM collections WHERE id = ?').get(collectionId) as any;
 
@@ -123,6 +125,7 @@ export class CollectionsController {
         name: collection.name,
         color: collection.color,
         icon: collection.icon,
+        isPublic: Boolean(collection.is_public),
         itemCount: 0,
         createdAt: new Date(collection.created_at),
         updatedAt: new Date(collection.updated_at),
@@ -140,14 +143,25 @@ export class CollectionsController {
     try {
       const userId = (req as any).userId;
       const { id } = req.params;
-      const { name, color, icon } = req.body;
+      const { name, color, icon, isPublic } = req.body;
 
       // Verify ownership
       const collection = db.prepare('SELECT * FROM collections WHERE id = ? AND user_id = ?')
-        .get(id, userId);
+        .get(id, userId) as any;
 
       if (!collection) {
         return res.status(404).json({ error: 'Collection not found' });
+      }
+
+      // Check if making collection private when it has subscribers
+      let subscriberCount = 0;
+      if (isPublic === false && collection.is_public === 1) {
+        const result = db.prepare(`
+          SELECT COUNT(DISTINCT source_id) as count
+          FROM source_collections
+          WHERE collection_id = ?
+        `).get(id) as any;
+        subscriberCount = result.count;
       }
 
       // Build update query
@@ -165,6 +179,10 @@ export class CollectionsController {
       if (icon !== undefined) {
         updates.push('icon = ?');
         values.push(icon);
+      }
+      if (isPublic !== undefined) {
+        updates.push('is_public = ?');
+        values.push(isPublic ? 1 : 0);
       }
 
       if (updates.length === 0) {
@@ -189,7 +207,9 @@ export class CollectionsController {
         name: updated.name,
         color: updated.color,
         icon: updated.icon,
+        isPublic: Boolean(updated.is_public),
         itemCount: count.count,
+        subscriberCount, // Return this to warn frontend
         createdAt: new Date(updated.created_at),
         updatedAt: new Date(updated.updated_at),
       });
@@ -296,6 +316,161 @@ export class CollectionsController {
     } catch (error) {
       console.error('Remove item from collection error:', error);
       res.status(500).json({ error: 'Failed to remove item from collection' });
+    }
+  }
+
+  /**
+   * Get all public collections (for discovery)
+   */
+  static async getPublicCollections(req: Request, res: Response) {
+    try {
+      const { search, userId: filterUserId, limit, offset } = req.query;
+
+      let query = `
+        SELECT
+          c.*,
+          u.username,
+          u.display_name as displayName,
+          u.avatar_url as avatarUrl,
+          COUNT(ci.feed_item_id) as itemCount
+        FROM collections c
+        INNER JOIN users u ON c.user_id = u.id
+        LEFT JOIN collection_items ci ON c.id = ci.collection_id
+        WHERE c.is_public = 1
+      `;
+
+      const params: any[] = [];
+
+      // Filter by user if specified
+      if (filterUserId) {
+        query += ` AND c.user_id = ?`;
+        params.push(filterUserId);
+      }
+
+      // Search by collection name or username
+      if (search) {
+        query += ` AND (c.name LIKE ? OR u.username LIKE ? OR u.display_name LIKE ?)`;
+        const searchPattern = `%${search}%`;
+        params.push(searchPattern, searchPattern, searchPattern);
+      }
+
+      query += ` GROUP BY c.id, u.id ORDER BY c.created_at DESC`;
+
+      // Add pagination
+      if (limit) {
+        query += ` LIMIT ?`;
+        params.push(parseInt(limit as string));
+      }
+      if (offset) {
+        query += ` OFFSET ?`;
+        params.push(parseInt(offset as string));
+      }
+
+      const collections = db.prepare(query).all(...params) as any[];
+
+      const result = collections.map(c => ({
+        id: c.id,
+        userId: c.user_id,
+        name: c.name,
+        color: c.color,
+        icon: c.icon,
+        isPublic: true,
+        itemIds: [], // Don't return full item list for public discovery
+        createdAt: new Date(c.created_at),
+        updatedAt: new Date(c.updated_at),
+        user: {
+          id: c.user_id,
+          username: c.username,
+          displayName: c.displayName,
+          avatarUrl: c.avatarUrl,
+        },
+        itemCount: c.itemCount,
+      }));
+
+      res.json(result);
+    } catch (error) {
+      console.error('Get public collections error:', error);
+      res.status(500).json({ error: 'Failed to get public collections' });
+    }
+  }
+
+  /**
+   * Get a single public collection by ID
+   */
+  static async getPublicCollection(req: Request<{ id: string }>, res: Response) {
+    try {
+      const { id } = req.params;
+
+      const collection = db.prepare(`
+        SELECT
+          c.*,
+          u.username,
+          u.display_name as displayName,
+          u.avatar_url as avatarUrl
+        FROM collections c
+        INNER JOIN users u ON c.user_id = u.id
+        WHERE c.id = ? AND c.is_public = 1
+      `).get(id) as any;
+
+      if (!collection) {
+        return res.status(404).json({ error: 'Public collection not found' });
+      }
+
+      // Get item count
+      const count = db.prepare(
+        'SELECT COUNT(*) as count FROM collection_items WHERE collection_id = ?'
+      ).get(id) as any;
+
+      res.json({
+        id: collection.id,
+        userId: collection.user_id,
+        name: collection.name,
+        color: collection.color,
+        icon: collection.icon,
+        isPublic: true,
+        itemIds: [], // Don't return full item list
+        createdAt: new Date(collection.created_at),
+        updatedAt: new Date(collection.updated_at),
+        user: {
+          id: collection.user_id,
+          username: collection.username,
+          displayName: collection.displayName,
+          avatarUrl: collection.avatarUrl,
+        },
+        itemCount: count.count,
+      });
+    } catch (error) {
+      console.error('Get public collection error:', error);
+      res.status(500).json({ error: 'Failed to get public collection' });
+    }
+  }
+
+  /**
+   * Get subscriber count for a collection
+   */
+  static async getSubscriberCount(req: Request<{ id: string }>, res: Response) {
+    try {
+      const userId = (req as any).userId;
+      const { id } = req.params;
+
+      // Verify ownership
+      const collection = db.prepare('SELECT * FROM collections WHERE id = ? AND user_id = ?')
+        .get(id, userId);
+
+      if (!collection) {
+        return res.status(404).json({ error: 'Collection not found' });
+      }
+
+      const result = db.prepare(`
+        SELECT COUNT(DISTINCT source_id) as count
+        FROM source_collections
+        WHERE collection_id = ?
+      `).get(id) as any;
+
+      res.json({ subscriberCount: result.count });
+    } catch (error) {
+      console.error('Get subscriber count error:', error);
+      res.status(500).json({ error: 'Failed to get subscriber count' });
     }
   }
 }

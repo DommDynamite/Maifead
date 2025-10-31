@@ -136,10 +136,12 @@ export interface CreateCollectionRequest {
   name: string;
   color: string;
   icon?: string;
+  isPublic?: boolean;
 }
 
 export interface UpdateCollectionRequest {
   name?: string;
   color?: string;
   icon?: string;
+  isPublic?: boolean;
 }
