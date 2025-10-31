@@ -203,11 +203,16 @@ class ApiClient {
     });
   }
 
-  async updateCollection(id: string, data: { name?: string; color?: string; icon?: string }) {
+  async updateCollection(id: string, data: { name?: string; color?: string; icon?: string; isPublic?: boolean }) {
     return this.request<any>(`/collections/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
+  }
+
+  async getCollectionSubscriberCount(id: string): Promise<number> {
+    const result = await this.request<{ count: number }>(`/collections/${id}/subscribers`);
+    return result.count;
   }
 
   async deleteCollection(id: string) {

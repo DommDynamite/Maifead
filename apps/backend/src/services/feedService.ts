@@ -1401,6 +1401,76 @@ export class FeedService {
   }
 
   /**
+   * Fetch items from public collection fead
+   * Aggregates items from multiple public collections
+   * Returns items that exist in the specified public collections
+   */
+  static async fetchPublicFeadItems(sourceId: string): Promise<{ items: any[]; errors: string[] }> {
+    const errors: string[] = [];
+
+    try {
+      // Get collection IDs linked to this source
+      const collectionLinks = db.prepare(`
+        SELECT collection_id FROM source_collections WHERE source_id = ?
+      `).all(sourceId) as any[];
+
+      if (collectionLinks.length === 0) {
+        return { items: [], errors: ['No collections linked to this source'] };
+      }
+
+      const collectionIds = collectionLinks.map(link => link.collection_id);
+
+      // Check which collections are still public
+      const publicCollections = db.prepare(`
+        SELECT id, name, is_public
+        FROM collections
+        WHERE id IN (${collectionIds.map(() => '?').join(',')})
+      `).all(...collectionIds) as any[];
+
+      const publicCollectionIds: string[] = [];
+      const privateCollectionNames: string[] = [];
+
+      for (const collection of publicCollections) {
+        if (collection.is_public) {
+          publicCollectionIds.push(collection.id);
+        } else {
+          privateCollectionNames.push(collection.name);
+          errors.push(`Collection "${collection.name}" is no longer public`);
+        }
+      }
+
+      // Check for deleted collections
+      const deletedCount = collectionIds.length - publicCollections.length;
+      if (deletedCount > 0) {
+        errors.push(`${deletedCount} collection(s) have been deleted`);
+      }
+
+      // If no public collections remain, return empty
+      if (publicCollectionIds.length === 0) {
+        return { items: [], errors: ['All collections are private or deleted'] };
+      }
+
+      // Fetch items from public collections
+      // Aggregate all unique feed items from these collections
+      const items = db.prepare(`
+        SELECT DISTINCT fi.*
+        FROM feed_items fi
+        INNER JOIN collection_items ci ON fi.id = ci.feed_item_id
+        WHERE ci.collection_id IN (${publicCollectionIds.map(() => '?').join(',')})
+        ORDER BY fi.published_at DESC, fi.created_at DESC
+      `).all(...publicCollectionIds) as any[];
+
+      console.log(`[fetchPublicFeadItems] Fetched ${items.length} items from ${publicCollectionIds.length} public collections (${errors.length} errors)`);
+
+      return { items, errors };
+    } catch (error) {
+      console.error(`Error fetching public fead items for source ${sourceId}:`, error);
+      errors.push(`Failed to fetch: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return { items: [], errors };
+    }
+  }
+
+  /**
    * Extract image URL from various feed item formats
    */
   private static extractImageUrl(item: ParsedFeedItem): string | undefined {

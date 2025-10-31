@@ -12,6 +12,7 @@ import { BottomNav } from './components/Navigation/BottomNav';
 import { FeadsPanel } from './components/Navigation/FeadsPanel';
 import { FeadModal } from './components/Navigation/FeadModal';
 import { CollectionsPanel } from './components/Navigation/CollectionsPanel';
+import { EditCollectionModal } from './components/Collections/EditCollectionModal';
 import { FeedControlsPanel } from './components/FeedControls/FeedControlsPanel';
 import { ToastContainer } from './components/Toast/ToastContainer';
 import { InstallPrompt } from './components/PWA/InstallPrompt';
@@ -21,7 +22,7 @@ import { useCollectionStore } from './stores/collectionStore';
 import { useFeedStore } from './stores/feedStore';
 import { useFeadStore } from './stores/feadStore';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import type { Fead } from '@maifead/types';
+import type { Fead, Collection } from '@maifead/types';
 
 function AppContent() {
   const { initialize, isAuthenticated } = useAuthStore();
@@ -32,6 +33,8 @@ function AppContent() {
 
   const [isFeadModalOpen, setIsFeadModalOpen] = useState(false);
   const [editingFead, setEditingFead] = useState<Fead | null>(null);
+  const [isEditCollectionModalOpen, setIsEditCollectionModalOpen] = useState(false);
+  const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
 
   // Register service worker for PWA functionality
   useRegisterSW({
@@ -117,6 +120,16 @@ function AppContent() {
     setEditingFead(null);
   };
 
+  const handleEditCollection = (collection: Collection) => {
+    setEditingCollection(collection);
+    setIsEditCollectionModalOpen(true);
+  };
+
+  const handleCloseEditCollectionModal = () => {
+    setIsEditCollectionModalOpen(false);
+    setEditingCollection(null);
+  };
+
   return (
     <>
       <IconRail />
@@ -129,7 +142,12 @@ function AppContent() {
         onDelete={handleDeleteFead}
         editFead={editingFead}
       />
-      <CollectionsPanel />
+      <CollectionsPanel onEditCollection={handleEditCollection} />
+      <EditCollectionModal
+        isOpen={isEditCollectionModalOpen}
+        onClose={handleCloseEditCollectionModal}
+        collection={editingCollection}
+      />
       <FeedControlsPanel items={feedItems} />
       <ToastContainer />
       <InstallPrompt />

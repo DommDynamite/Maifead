@@ -11,7 +11,9 @@ export interface Collection {
   updatedAt: Date;
 }
 
-export type CreateCollectionInput = Pick<Collection, 'name' | 'description' | 'color' | 'icon' | 'isPublic'>;
+export type CreateCollectionInput = Pick<Collection, 'name' | 'description' | 'color' | 'icon'> & {
+  isPublic?: boolean;
+};
 export type UpdateCollectionInput = Partial<Omit<CreateCollectionInput, 'name'> & { name?: string }>;
 
 // Public collection with user information for discovery

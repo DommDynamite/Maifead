@@ -27,10 +27,12 @@ export const useCollectionStore = create<CollectionStore>()((set, get) => ({
       set({
         collections: collections.map((c: any) => ({
           id: c.id,
+          userId: c.userId,
           name: c.name,
           description: c.description,
           color: c.color,
           icon: c.icon,
+          isPublic: c.isPublic || false,
           itemIds: c.itemIds || [], // Now populated from backend
           createdAt: new Date(c.createdAt),
           updatedAt: new Date(c.updatedAt),
@@ -53,10 +55,12 @@ export const useCollectionStore = create<CollectionStore>()((set, get) => ({
 
       const newCollection: Collection = {
         id: collection.id,
+        userId: collection.userId,
         name: collection.name,
         description: input.description,
         color: collection.color,
         icon: collection.icon,
+        isPublic: collection.isPublic || false,
         itemIds: [],
         createdAt: new Date(collection.createdAt),
         updatedAt: new Date(collection.updatedAt),
@@ -84,6 +88,7 @@ export const useCollectionStore = create<CollectionStore>()((set, get) => ({
                 name: updated.name,
                 color: updated.color,
                 icon: updated.icon,
+                isPublic: updated.isPublic !== undefined ? updated.isPublic : collection.isPublic,
                 updatedAt: new Date(updated.updatedAt),
               }
             : collection
