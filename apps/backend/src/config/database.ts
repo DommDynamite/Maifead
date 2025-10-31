@@ -219,11 +219,19 @@ export const initializeDatabase = () => {
       name TEXT NOT NULL,
       color TEXT NOT NULL,
       icon TEXT,
+      is_public BOOLEAN DEFAULT 0,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
+
+  // Add is_public column to existing collections table if it doesn't exist
+  try {
+    db.exec(`ALTER TABLE collections ADD COLUMN is_public BOOLEAN DEFAULT 0`);
+  } catch (error) {
+    // Column already exists, ignore error
+  }
 
   // Collection items junction table
   db.exec(`
@@ -268,6 +276,17 @@ export const initializeDatabase = () => {
     )
   `);
 
+  // Source collections junction table (for collection feads)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS source_collections (
+      source_id TEXT NOT NULL,
+      collection_id TEXT NOT NULL,
+      PRIMARY KEY (source_id, collection_id),
+      FOREIGN KEY (source_id) REFERENCES sources(id) ON DELETE CASCADE,
+      FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE
+    )
+  `);
+
   // User-specific read/saved status for feed items
   db.exec(`
     CREATE TABLE IF NOT EXISTS user_feed_items (
@@ -290,9 +309,12 @@ export const initializeDatabase = () => {
     CREATE INDEX IF NOT EXISTS idx_feed_items_saved ON feed_items(saved);
     CREATE INDEX IF NOT EXISTS idx_sources_user_id ON sources(user_id);
     CREATE INDEX IF NOT EXISTS idx_collections_user_id ON collections(user_id);
+    CREATE INDEX IF NOT EXISTS idx_collections_is_public ON collections(is_public);
+    CREATE INDEX IF NOT EXISTS idx_collections_user_public ON collections(user_id, is_public);
     CREATE INDEX IF NOT EXISTS idx_collection_items_feed_item_id ON collection_items(feed_item_id);
     CREATE INDEX IF NOT EXISTS idx_feads_user_id ON feads(user_id);
     CREATE INDEX IF NOT EXISTS idx_fead_sources_source_id ON fead_sources(source_id);
+    CREATE INDEX IF NOT EXISTS idx_source_collections_collection_id ON source_collections(collection_id);
     CREATE INDEX IF NOT EXISTS idx_user_feed_items_user_id ON user_feed_items(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_feed_items_feed_item_id ON user_feed_items(feed_item_id);
   `);
