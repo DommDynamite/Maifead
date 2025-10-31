@@ -43,6 +43,8 @@ export interface FeedSource {
   updatedAt: Date;
 }
 
-export type FeedSourceInput = Omit<FeedSource, 'id' | 'createdAt' | 'updatedAt'>;
+export type FeedSourceInput = Omit<FeedSource, 'id' | 'createdAt' | 'updatedAt' | 'isEnabled'> & {
+  isEnabled?: boolean;
+};
 
 export type FeedSourceUpdate = Partial<Omit<FeedSource, 'id' | 'url' | 'type' | 'createdAt' | 'updatedAt'>>;

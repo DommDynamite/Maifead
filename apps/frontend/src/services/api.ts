@@ -111,7 +111,7 @@ class ApiClient {
     return this.request<any[]>('/sources');
   }
 
-  async createSource(data: { name: string; url: string; type?: string; channelId?: string; subreddit?: string; redditUsername?: string; redditSourceType?: string; redditMinUpvotes?: number; youtubeShortsFilter?: string; blueskyHandle?: string; blueskyDid?: string; blueskyFeedUri?: string; category?: string; retentionDays?: number; suppressFromMainFeed?: boolean; whitelistKeywords?: string[]; blacklistKeywords?: string[] }) {
+  async createSource(data: { name: string; url: string; type?: string; channelId?: string; subreddit?: string; redditUsername?: string; redditSourceType?: string; redditMinUpvotes?: number; youtubeShortsFilter?: string; blueskyHandle?: string; blueskyDid?: string; blueskyFeedUri?: string; category?: string; retentionDays?: number; suppressFromMainFeed?: boolean; whitelistKeywords?: string[]; blacklistKeywords?: string[]; collectionIds?: string[] }) {
     return this.request<any>('/sources', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -213,6 +213,18 @@ class ApiClient {
   async getCollectionSubscriberCount(id: string): Promise<number> {
     const result = await this.request<{ count: number }>(`/collections/${id}/subscribers`);
     return result.count;
+  }
+
+  async getPublicCollections(params?: { search?: string }): Promise<any[]> {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+
+    const queryString = query.toString();
+    return this.request<any[]>(`/collections/public${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getPublicCollection(id: string): Promise<any> {
+    return this.request<any>(`/collections/public/${id}`);
   }
 
   async deleteCollection(id: string) {
