@@ -280,6 +280,11 @@ const TypeBadge = styled.div<{ $type: string }>`
         background: #1185fe22;
         color: #1185fe;
       `;
+    } else if (props.$type === 'publicfead') {
+      return `
+        background: #8b5cf622;
+        color: #8b5cf6;
+      `;
     } else {
       return `
         background: ${props.theme.colors.primary}22;
