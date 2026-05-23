@@ -9,6 +9,7 @@
     "type-check": "tsc --noEmit",
     "start": "node dist/index.js",
     "db:migrate": "tsx src/scripts/migrate.ts",
+    "db:migrate:saved-items": "tsx src/scripts/migrate-to-saved-items.ts",
     "db:seed": "tsx src/scripts/seed.ts"
   },
   "dependencies": {

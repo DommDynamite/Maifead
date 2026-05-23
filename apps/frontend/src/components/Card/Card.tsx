@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { formatDistanceToNow } from 'date-fns';
-import { Star, FolderPlus, ExternalLink, Share2, Bookmark } from 'lucide-react';
+import { Star, FolderPlus, ExternalLink, Share2, Bookmark, CheckCircle } from 'lucide-react';
 import type { ContentItem } from '@maifead/types';
 import type { ViewMode } from '../../stores/uiStore';
 import { ContextMenu, type ContextMenuItem } from '../ContextMenu/ContextMenu';
@@ -36,6 +36,8 @@ const CardContainer = styled.article<{ $isRead?: boolean; $compact?: boolean }>`
   &:active {
     transform: translateY(0);
   }
+
+  user-select: none;
 `;
 
 const CardHeader = styled.header<{ $compact?: boolean }>`
@@ -173,6 +175,25 @@ const CompactSourceName = styled.span`
   font-weight: ${props => props.theme.fontWeights.medium};
 `;
 
+const QuickReadButton = styled.button<{ $isRead?: boolean }>`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: ${props => props.theme.spacing[1]};
+  color: ${props => (props.$isRead ? props.theme.colors.success : props.theme.colors.textSecondary)};
+  display: flex;
+  align-items: center;
+  border-radius: ${props => props.theme.borderRadius.sm};
+  flex-shrink: 0;
+  transition: all ${props => props.theme.transitions.fast};
+  margin-left: auto;
+
+  &:hover {
+    color: ${props => props.theme.colors.success};
+    background: ${props => props.theme.colors.border};
+  }
+`;
+
 export const Card: React.FC<CardProps> = ({ item, onClick, viewMode = 'detailed' }) => {
   const timeAgo = formatDistanceToNow(item.publishedAt, { addSuffix: true });
   const primaryMedia = item.media?.[0];
@@ -196,6 +217,16 @@ export const Card: React.FC<CardProps> = ({ item, onClick, viewMode = 'detailed'
     // Don't trigger onClick if context menu is open
     if (contextMenuOpen) return;
     onClick();
+  };
+
+  const handleMarkRead = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await markItemRead(item.id, !item.isRead);
+      success(item.isRead ? 'Marked as unread' : 'Marked as read');
+    } catch (error) {
+      console.error('Failed to toggle read status:', error);
+    }
   };
 
   const contextMenuItems: ContextMenuItem[] = [
@@ -262,6 +293,9 @@ export const Card: React.FC<CardProps> = ({ item, onClick, viewMode = 'detailed'
           <Separator />
           <Timestamp dateTime={item.publishedAt.toISOString()}>{timeAgo}</Timestamp>
         </SourceInfo>
+        <QuickReadButton $isRead={item.isRead} onClick={handleMarkRead} title={item.isRead ? 'Mark as unread' : 'Mark as read'}>
+          <CheckCircle size={16} />
+        </QuickReadButton>
       </CardHeader>
 
       {primaryMedia && (primaryMedia.type === 'image' || primaryMedia.type === 'video') && (
@@ -284,6 +318,9 @@ export const Card: React.FC<CardProps> = ({ item, onClick, viewMode = 'detailed'
             <CompactSourceName>{item.source.name}</CompactSourceName>
             <Separator />
             <Timestamp dateTime={item.publishedAt.toISOString()}>{timeAgo}</Timestamp>
+            <QuickReadButton $isRead={item.isRead} onClick={handleMarkRead} title={item.isRead ? 'Mark as unread' : 'Mark as read'}>
+              <CheckCircle size={14} />
+            </QuickReadButton>
           </CompactInfo>
         )}
         {item.tags && item.tags.length > 0 && (

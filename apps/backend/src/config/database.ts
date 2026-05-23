@@ -225,15 +225,37 @@ export const initializeDatabase = () => {
     )
   `);
 
-  // Collection items junction table
+  // Saved items table - stores permanent copies of feed items added to collections
+  // This preserves content even after feed_items are deleted by retention policy
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS saved_items (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      source_name TEXT NOT NULL,
+      source_type TEXT NOT NULL,
+      source_icon TEXT,
+      source_url TEXT,
+      title TEXT NOT NULL,
+      link TEXT NOT NULL,
+      content TEXT,
+      excerpt TEXT,
+      author TEXT,
+      published_at INTEGER,
+      image_url TEXT,
+      added_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Collection items junction table - references saved_items for permanent storage
   db.exec(`
     CREATE TABLE IF NOT EXISTS collection_items (
       collection_id TEXT NOT NULL,
-      feed_item_id TEXT NOT NULL,
+      saved_item_id TEXT NOT NULL,
       added_at INTEGER NOT NULL,
-      PRIMARY KEY (collection_id, feed_item_id),
+      PRIMARY KEY (collection_id, saved_item_id),
       FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE,
-      FOREIGN KEY (feed_item_id) REFERENCES feed_items(id) ON DELETE CASCADE
+      FOREIGN KEY (saved_item_id) REFERENCES saved_items(id) ON DELETE CASCADE
     )
   `);
 
@@ -290,7 +312,9 @@ export const initializeDatabase = () => {
     CREATE INDEX IF NOT EXISTS idx_feed_items_saved ON feed_items(saved);
     CREATE INDEX IF NOT EXISTS idx_sources_user_id ON sources(user_id);
     CREATE INDEX IF NOT EXISTS idx_collections_user_id ON collections(user_id);
-    CREATE INDEX IF NOT EXISTS idx_collection_items_feed_item_id ON collection_items(feed_item_id);
+    CREATE INDEX IF NOT EXISTS idx_saved_items_user_id ON saved_items(user_id);
+    CREATE INDEX IF NOT EXISTS idx_saved_items_added_at ON saved_items(added_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_collection_items_saved_item_id ON collection_items(saved_item_id);
     CREATE INDEX IF NOT EXISTS idx_feads_user_id ON feads(user_id);
     CREATE INDEX IF NOT EXISTS idx_fead_sources_source_id ON fead_sources(source_id);
     CREATE INDEX IF NOT EXISTS idx_user_feed_items_user_id ON user_feed_items(user_id);

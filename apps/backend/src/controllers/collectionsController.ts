@@ -18,7 +18,7 @@ export class CollectionsController {
       // Get item IDs for each collection
       const collectionsWithItems = collections.map(c => {
         const items = db.prepare(
-          'SELECT feed_item_id FROM collection_items WHERE collection_id = ?'
+          'SELECT saved_item_id FROM collection_items WHERE collection_id = ?'
         ).all(c.id) as any[];
 
         return {
@@ -27,7 +27,7 @@ export class CollectionsController {
           name: c.name,
           color: c.color,
           icon: c.icon,
-          itemIds: items.map(item => item.feed_item_id),
+          itemIds: items.map(item => item.saved_item_id),
           createdAt: new Date(c.created_at),
           updatedAt: new Date(c.updated_at),
         };
@@ -56,14 +56,18 @@ export class CollectionsController {
         return res.status(404).json({ error: 'Collection not found' });
       }
 
-      // Get items in this collection
+      // Get items in this collection from saved_items (permanent storage)
       const items = db.prepare(`
-        SELECT fi.*, ci.added_at
-        FROM feed_items fi
-        INNER JOIN collection_items ci ON fi.id = ci.feed_item_id
-        WHERE ci.collection_id = ?
+        SELECT si.*,
+               ci.added_at,
+               COALESCE(ufi.read, 0) as read,
+               COALESCE(ufi.saved, 0) as saved
+        FROM saved_items si
+        INNER JOIN collection_items ci ON si.id = ci.saved_item_id
+        LEFT JOIN user_feed_items ufi ON si.id = ufi.feed_item_id AND ufi.user_id = ?
+        WHERE ci.collection_id = ? AND si.user_id = ?
         ORDER BY ci.added_at DESC
-      `).all(id) as any[];
+      `).all(userId, id, userId) as any[];
 
       res.json({
         id: collection.id,
@@ -75,7 +79,12 @@ export class CollectionsController {
         updatedAt: new Date(collection.updated_at),
         items: items.map(item => ({
           id: item.id,
-          sourceId: item.source_id,
+          source: {
+            name: item.source_name,
+            type: item.source_type,
+            icon: item.source_icon,
+            url: item.source_url,
+          },
           title: item.title,
           link: item.link,
           content: item.content,
@@ -85,7 +94,6 @@ export class CollectionsController {
           imageUrl: item.image_url,
           read: Boolean(item.read),
           saved: Boolean(item.saved),
-          createdAt: new Date(item.created_at),
           addedAt: new Date(item.added_at),
         })),
       });
@@ -242,29 +250,61 @@ export class CollectionsController {
 
       // Verify item exists and user has access to it
       const item = db.prepare(`
-        SELECT fi.* FROM feed_items fi
+        SELECT fi.*, s.name as source_name, s.type as source_type, s.icon_url as source_icon, s.url as source_url
+        FROM feed_items fi
         INNER JOIN sources s ON fi.source_id = s.id
         WHERE fi.id = ? AND s.user_id = ?
-      `).get(itemId, userId);
+      `).get(itemId, userId) as any;
 
       if (!item) {
         return res.status(404).json({ error: 'Feed item not found' });
       }
 
-      // Check if already in collection
+      // Check if this item is already saved (might be in another collection)
+      let savedItem = db.prepare('SELECT * FROM saved_items WHERE id = ? AND user_id = ?')
+        .get(itemId, userId) as any;
+
+      const now = Date.now();
+
+      // If not already saved, create a saved_item with the full content
+      if (!savedItem) {
+        db.prepare(`
+          INSERT INTO saved_items (
+            id, user_id, source_name, source_type, source_icon, source_url,
+            title, link, content, excerpt, author, published_at, image_url, added_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          itemId,
+          userId,
+          item.source_name,
+          item.source_type,
+          item.source_icon,
+          item.source_url,
+          item.title,
+          item.link,
+          item.content,
+          item.excerpt,
+          item.author,
+          item.published_at,
+          item.image_url,
+          now
+        );
+      }
+
+      // Check if already in this specific collection
       const existing = db.prepare(
-        'SELECT * FROM collection_items WHERE collection_id = ? AND feed_item_id = ?'
+        'SELECT * FROM collection_items WHERE collection_id = ? AND saved_item_id = ?'
       ).get(id, itemId);
 
       if (existing) {
         return res.status(400).json({ error: 'Item already in collection' });
       }
 
-      // Add to collection
+      // Add to collection (links to saved_item, not feed_item)
       db.prepare(`
-        INSERT INTO collection_items (collection_id, feed_item_id, added_at)
+        INSERT INTO collection_items (collection_id, saved_item_id, added_at)
         VALUES (?, ?, ?)
-      `).run(id, itemId, Date.now());
+      `).run(id, itemId, now);
 
       res.json({ message: 'Item added to collection successfully' });
     } catch (error) {
@@ -289,7 +329,7 @@ export class CollectionsController {
         return res.status(404).json({ error: 'Collection not found' });
       }
 
-      db.prepare('DELETE FROM collection_items WHERE collection_id = ? AND feed_item_id = ?')
+      db.prepare('DELETE FROM collection_items WHERE collection_id = ? AND saved_item_id = ?')
         .run(id, itemId);
 
       res.json({ message: 'Item removed from collection successfully' });
