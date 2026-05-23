@@ -46,6 +46,14 @@ function AppContent() {
     },
   });
 
+  // Lock orientation to portrait in standalone PWA mode
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    if (isStandalone && screen.orientation && typeof (screen.orientation as any).lock === 'function') {
+      (screen.orientation as any).lock('portrait-primary').catch(() => {});
+    }
+  }, []);
+
   // Initialize auth and fetch data on mount
   useEffect(() => {
     const initApp = async () => {
