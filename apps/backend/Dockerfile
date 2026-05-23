@@ -49,11 +49,7 @@ COPY --from=base /app/packages ./packages
 COPY --from=base /app/apps/backend ./apps/backend
 
 # Install production dependencies only
-RUN pnpm install --frozen-lockfile --omit=dev
-
-# Manually rebuild native modules for Alpine Linux (pnpm uses symlinks so we need to navigate to actual packages)
-RUN cd /app/node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release && \
-    cd /app/node_modules/.pnpm/bcrypt@*/node_modules/bcrypt && npm run install
+RUN pnpm install --frozen-lockfile --prod
 
 # Create data directory for SQLite database
 RUN mkdir -p /app/apps/backend/data
