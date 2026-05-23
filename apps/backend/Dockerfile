@@ -5,7 +5,7 @@ FROM node:22-alpine AS base
 RUN apk add --no-cache python3 make g++
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@11.2.2 --activate
 
 # Set working directory
 WORKDIR /app
@@ -35,7 +35,7 @@ FROM node:22-alpine AS runner
 RUN apk add --no-cache python3 build-base gcc wget && ln -sf /usr/bin/python3 /usr/bin/python
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@11.2.2 --activate
 
 WORKDIR /app
 
@@ -49,7 +49,7 @@ COPY --from=base /app/packages ./packages
 COPY --from=base /app/apps/backend ./apps/backend
 
 # Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --omit=dev
 
 # Manually rebuild native modules for Alpine Linux (pnpm uses symlinks so we need to navigate to actual packages)
 RUN cd /app/node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release && \
