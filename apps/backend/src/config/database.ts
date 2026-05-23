@@ -259,6 +259,13 @@ export const initializeDatabase = () => {
     )
   `);
 
+  // Migrate collection_items.feed_item_id -> saved_item_id if old schema exists
+  try {
+    db.exec(`ALTER TABLE collection_items RENAME COLUMN feed_item_id TO saved_item_id`);
+  } catch (error) {
+    // Column already renamed or doesn't exist, ignore
+  }
+
   // Feads table (custom feed presets)
   db.exec(`
     CREATE TABLE IF NOT EXISTS feads (
